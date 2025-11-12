@@ -27,22 +27,37 @@ public class ControleDeJogo {
                 
                 // 1. O personagem é Mortal?
                 if (pIesimoPersonagem instanceof Mortal) {
-                    return "HERO_DIED"; // Informa a Tela que o herói morreu
+                    return "HERO_DIED";
                 
-                // 2. O personagem é a "saída" da fase? (Definimos a Esfera)
-                } else if (pIesimoPersonagem instanceof Esfera) {
-                    return "NEXT_LEVEL"; // Informa a Tela para passar de fase
+                // 2. É um Portal?
+                } else if (pIesimoPersonagem instanceof Modelo.Portal) {
+                    Modelo.Portal portal = (Modelo.Portal) pIesimoPersonagem;
+                    int destino = portal.getDestinoFase();
                     
-                // 3. O personagem é Coletável?
+                    // --- AQUI ESTÁ A CORREÇÃO ---
+                    if (destino == 0) {
+                        // Destino 0 = Fim da Fase (volta ao Lobby)
+                        return "FASE_CONCLUIDA"; // <<-- MUDANÇA CRÍTICA
+                    } else {
+                        // Destino 1,2,3,4,5 = Portal de Viagem
+                        return "PORTAL_FASE_" + destino; 
+                    }
+                    // --- FIM DA CORREÇÃO ---
+                    
+                // 3. É um ItemChave (os 3 colecionáveis)?
+                } else if (pIesimoPersonagem instanceof Modelo.ItemChave) {
+                    umaFase.remove(pIesimoPersonagem); 
+                    return "ITEM_COLETADO"; 
+                    
+                // 4. É algum outro Coletavel (ex: moeda, vida extra)?
                 } else if (pIesimoPersonagem instanceof Coletavel) {
                     umaFase.remove(pIesimoPersonagem);
-                    // (Aqui poderíamos retornar "ITEM_COLLECTED" se quiséssemos
-                    // que a Tela soubesse para adicionar pontos, por exemplo)
+                    return "PONTOS";
                 }
             }
         }
         
-        // Atualiza a direção do Chaser (lógica antiga)
+        // Atualiza a direção dos Chasers
         for (int i = 1; i < umaFase.size(); i++) {
             pIesimoPersonagem = umaFase.get(i);
             if (pIesimoPersonagem instanceof Chaser) {
@@ -50,7 +65,7 @@ public class ControleDeJogo {
             }
         }
         
-        return "GAME_RUNNING"; // Se nada aconteceu, o jogo continua
+        return "GAME_RUNNING";
     }
 
     /*Retorna true se a posicao p é válida para Hero com relacao a todos os personagens no array*/

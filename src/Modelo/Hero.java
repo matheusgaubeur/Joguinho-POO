@@ -65,4 +65,17 @@ public class Hero extends Animado implements Serializable{
         return false;
     }    
     
+    public void setSkin(String sNomeImagePNG) {
+        try {
+            // Esse código é copiado do construtor de Personagem.java
+            iImage = new javax.swing.ImageIcon(new java.io.File(".").getCanonicalPath() + Auxiliar.Consts.PATH + sNomeImagePNG);
+            java.awt.Image img = iImage.getImage();
+            java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(Auxiliar.Consts.CELL_SIDE, Auxiliar.Consts.CELL_SIDE, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            java.awt.Graphics g = bi.createGraphics();
+            g.drawImage(img, 0, 0, Auxiliar.Consts.CELL_SIDE, Auxiliar.Consts.CELL_SIDE, null);
+            iImage = new javax.swing.ImageIcon(bi);
+        } catch (java.io.IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
 }

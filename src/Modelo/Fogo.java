@@ -1,21 +1,15 @@
 package Modelo;
 
-import Auxiliar.Desenho;
-import Controler.Tela;
-import java.awt.Graphics;
 import java.io.Serializable;
 
-public class Fogo extends Personagem implements Serializable, Mortal {
+public class Fogo extends Projetil implements Serializable {
             
     public Fogo(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
     }
 
     @Override
-    public void autoDesenho() {
-        super.autoDesenho();
-        if(!this.moveRight())
-            Desenho.acessoATelaDoJogo().removePersonagem(this);
+    public boolean move() {
+        return this.moveRight(); // Lógica de movimento do Fogo
     }
-    
 }

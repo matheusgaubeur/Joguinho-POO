@@ -51,49 +51,104 @@ import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import Modelo.Fases.IFase;
+import Modelo.Portal;
+import Modelo.ItemChave;
+import Modelo.Mensagem;
+import java.awt.image.BufferedImage;
 
 public class Tela extends javax.swing.JFrame implements MouseListener, KeyListener, DropTargetListener {
 
     private GerenciadorFase gFase;
+    private IFase configFaseAtual;
     private int nivelAtual;
     private int vidas;
     private int pontuacao;
+    private int itensColetados;
+    private String backgroundTile;
     private ArrayList<Personagem> faseAtual;
     private ControleDeJogo cj = new ControleDeJogo();
     private Graphics g2;
     private int cameraLinha = 0;
     private int cameraColuna = 0;
     private final Set<Integer> teclasPressionadas = new HashSet<>();
+    private javax.swing.ImageIcon iCoracaoHUD;
+    private int faseTimer; // NOVO: Timer da fase (para sobrevivência)
+    private int spawnTimer; // NOVO: Timer para criar inimigos na Fase 5
+    private java.util.Set<Integer> fasesConcluidas; // NOVO: A "Memória" do jogo
     
     public Tela() {
         Desenho.setCenario(this);
         initComponents();
         this.addMouseListener(this);
-        /*mouse*/
         this.addKeyListener(this);
-        // drag and drop
         new DropTarget(this, this);
-        /*teclado*/
-        /*Cria a janela do tamanho do tabuleiro + insets (bordas) da janela*/
         this.setSize(Consts.RES * Consts.CELL_SIDE + getInsets().left + getInsets().right,
                 Consts.RES * Consts.CELL_SIDE + getInsets().top + getInsets().bottom);
 
-        // Instancia o Gerenciador e carrega a primeira fase
+        // --- LÓGICA DE INICIALIZAÇÃO MODIFICADA ---
         this.gFase = new GerenciadorFase();
-        this.nivelAtual = 1;
-        this.faseAtual = gFase.carregarFase(this.nivelAtual);
-
-        this.atualizaCamera(); // Agora o herói existe e podemos atualizar a câmera
+        this.vidas = 10;
+        this.pontuacao = 0;
+        this.fasesConcluidas = new java.util.HashSet<>();
         
-        // Instancia o Gerenciador e carrega a primeira fase
-        this.gFase = new GerenciadorFase();
-        this.nivelAtual = 1;
-        this.vidas = 3;      // Novo
-        this.pontuacao = 0;  // Novo
+        this.faseAtual = new ArrayList<Personagem>(); // Inicia a lista vazia
+        this.iniciarFase(0); // Inicia o jogo no Lobby (Nível 0)
         
-        this.faseAtual = gFase.carregarFase(this.nivelAtual);
+        // NOVO: Carrega a imagem do coração para o HUD
+        try {
+            iCoracaoHUD = new javax.swing.ImageIcon(new java.io.File(".").getCanonicalPath() + Consts.PATH + "coracao.png");
+            // Redimensiona o ícone do HUD para um tamanho bom (ex: 25x25)
+            java.awt.Image img = iCoracaoHUD.getImage();
+            java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(25, 25, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            java.awt.Graphics g = bi.createGraphics();
+            g.drawImage(img, 0, 0, 25, 25, null);
+            iCoracaoHUD = new javax.swing.ImageIcon(bi);
+        } catch (java.io.IOException ex) {
+            System.out.println("Erro ao carregar imagem do HUD: " + ex.getMessage());
+        }
+    }
+    
+    /**
+     * NOVO MÉTODO:
+     * Centraliza a lógica de carregar, reiniciar ou trocar de fase.
+     * @param novoNivel O número da fase a ser carregada.
+     */
+    public void iniciarFase(int novoNivel) {
+        this.nivelAtual = novoNivel;
+        this.itensColetados = 0; 
+        this.faseTimer = 0; 
+        this.spawnTimer = 0; 
         
-        this.atualizaCamera();
+        // 1. Pega o objeto da Fase
+        this.configFaseAtual = gFase.getFase(this.nivelAtual);
+        
+        // ==========================================================
+        // NOVO "BRIDGE" DE LÓGICA:
+        // Se a fase que estamos carregando é o Lobby,
+        // nós o "atualizamos" com a lista de fases concluídas.
+        if (this.configFaseAtual instanceof Modelo.Fases.Lobby) {
+            ((Modelo.Fases.Lobby) this.configFaseAtual).atualizarFasesConcluidas(this.fasesConcluidas);
+        }
+        // ==========================================================
+        
+        // 2. Carrega os personagens iniciais
+        this.faseAtual.clear();
+        this.faseAtual = this.configFaseAtual.carregarPersonagensIniciais();
+        
+        // 3. Define o tema (background e skin)
+        this.backgroundTile = this.configFaseAtual.getBackgroundTile();
+        if (getHero() != null) { 
+            getHero().setSkin(this.configFaseAtual.getHeroSkin());
+            this.atualizaCamera();
+        } else if (this.nivelAtual != 6) { 
+             System.out.println("ERRO: Fase " + this.nivelAtual + " não carregou um Herói!");
+        }
+        
+        String msg = this.configFaseAtual.getMensagemInicial();
+        if (msg != null && !msg.isEmpty()) {
+            this.addPersonagem(new Mensagem(msg));
+        }
     }
     
     public Hero getHero() {
@@ -131,35 +186,33 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
     public void paint(Graphics gOld) {
         Graphics g = this.getBufferStrategy().getDrawGraphics();
-        /*Criamos um contexto gráfico*/
         g2 = g.create(getInsets().left, getInsets().top, getWidth() - getInsets().right, getHeight() - getInsets().top);
+        
         /**
-         * ***********Desenha cenário de fundo*************
+         * *********** Desenha cenário de fundo (AGORA TEMÁTICO) *************
          */
-        for (int i = 0; i < Consts.RES; i++) {
-            for (int j = 0; j < Consts.RES; j++) {
-                int mapaLinha = cameraLinha + i;
-                int mapaColuna = cameraColuna + j;
-
-                if (mapaLinha < Consts.MUNDO_ALTURA && mapaColuna < Consts.MUNDO_LARGURA) {
-                    try {
-                        Image newImage = Toolkit.getDefaultToolkit().getImage(
-                                new java.io.File(".").getCanonicalPath() + Consts.PATH + "bricks.png");
+        if (this.backgroundTile != null) { // Garante que o tile existe
+            try {
+                Image newImage = Toolkit.getDefaultToolkit().getImage(
+                        new java.io.File(".").getCanonicalPath() + Consts.PATH + this.backgroundTile);
+                
+                for (int i = 0; i < Consts.RES; i++) {
+                    for (int j = 0; j < Consts.RES; j++) {
                         g2.drawImage(newImage,
                                 j * Consts.CELL_SIDE, i * Consts.CELL_SIDE,
                                 Consts.CELL_SIDE, Consts.CELL_SIDE, null);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Tela.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
+            } catch (IOException ex) {
+                Logger.getLogger(Tela.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        
+        // --- LÓGICA DE JOGO MODIFICADA ---
         if (!this.faseAtual.isEmpty()) {
             this.cj.desenhaTudo(faseAtual);
-            if (!this.faseAtual.isEmpty()) {
-            this.cj.desenhaTudo(faseAtual);
             
-            // Pega o status do jogo (aqui é a mágica)
+            // Pega o status do jogo (do ControleDeJogo modificado)
             String status = this.cj.processaTudo(faseAtual);
             
             // Age de acordo com o status
@@ -172,20 +225,91 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                         this.reiniciarFase();
                     }
                     break;
-                case "NEXT_LEVEL":
+                case "ITEM_COLETADO":
+                    this.processarColeta(); // Chama a lógica de 3 itens
+                    break;
+                
+                // Lógica de Portais (do Lobby)
+                case "PORTAL_FASE_0":
+                    this.iniciarFase(0); // Vai para o Lobby
+                    break;
+                case "PORTAL_FASE_1":
+                    this.iniciarFase(1); // Vai para Fase 1
+                    break;
+                case "PORTAL_FASE_2":
+                    this.iniciarFase(2); // Vai para Fase 2
+                    break;
+                case "PORTAL_FASE_3":
+                    this.iniciarFase(3); // Vai para Fase 3
+                    break;
+                case "PORTAL_FASE_4":
+                    this.iniciarFase(4); // Vai para Fase 4
+                    break;
+                case "PORTAL_FASE_5":
+                    this.iniciarFase(5); // Vai para Fase 5
+                    break;
+                
+                case "FASE_CONCLUIDA": // Status do Portal de saída (destino 0)
                     this.proximaFase();
                     break;
+
                 case "GAME_RUNNING":
                     // Não faz nada, o jogo continua
                     break;
-                }
+            }
+        } else if (this.nivelAtual == 6) {
+             // LÓGICA DA FASE 6 (Créditos)
+             g2.drawString("PARABENS, VOCE ZEROU O JOGO!", 180, 200);
+             g2.drawString("Criado por: [Seu Nome Aqui] e [Nome Colega 1]", 180, 250);
+        }
+        
+        // ==========================================================
+        // NOVO: Desenhando o HUD (Vidas e Pontos)
+        // ==========================================================
+        // Define a fonte e a cor
+        g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 20));
+        g2.setColor(java.awt.Color.WHITE);
+
+        // Desenha a Pontuação (no canto superior direito)
+        String textoPontos = "Pontos: " + this.pontuacao;
+        g2.drawString(textoPontos, 430, 25); // (Posição X, Y)
+
+        // Desenha as Vidas (no canto superior esquerdo)
+        if (iCoracaoHUD != null) {
+            for (int i = 0; i < this.vidas; i++) {
+                // Desenha um coração para cada vida, com espaçamento
+                iCoracaoHUD.paintIcon(this, g2, 10 + (i * 30), 5);
             }
         }
-
+        // ==========================================================
+        // FIM DO HUD
+        // ==========================================================
+        
         g.dispose();
         g2.dispose();
         if (!getBufferStrategy().contentsLost()) {
             getBufferStrategy().show();
+        }
+    }
+
+    /**
+     * NOVO MÉTODO:
+     * Implementa a lógica do brainstorm de 3 itens.
+     */
+    private void processarColeta() {
+        this.pontuacao += 50; // Ganha pontos por item
+        this.itensColetados++;
+        System.out.println("Item coletado! Total: " + this.itensColetados);
+
+        if (this.itensColetados == 1) {
+            // Adiciona as barreiras
+            this.faseAtual.addAll(this.configFaseAtual.getPersonagensColeta_1());
+        } else if (this.itensColetados == 2) {
+            // Adiciona o "chefão"
+            this.faseAtual.addAll(this.configFaseAtual.getPersonagensColeta_2());
+        } else if (this.itensColetados == 3) {
+            // Adiciona o portal de saída
+            this.faseAtual.add(this.configFaseAtual.getPersonagemColeta_3());
         }
     }
 
@@ -292,53 +416,76 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
     public void reiniciarFase() {
         System.out.println("Voce morreu! Vidas restantes: " + this.vidas);
-        this.faseAtual.clear(); // Limpa a fase antiga
-        this.faseAtual = gFase.carregarFase(this.nivelAtual); // Recarrega o *mesmo* nível
-        this.atualizaCamera();
+        this.iniciarFase(this.nivelAtual); // Apenas recarrega o nível atual
     }
     
     public void proximaFase() {
-        this.nivelAtual++;
-        this.pontuacao += 100; // Ganha pontos por passar de fase
+        this.pontuacao += 100;
         System.out.println("Passou de fase! Pontos: " + this.pontuacao);
-
-        if (this.nivelAtual > 5) { // Opcional do Req 3 [cite: 42]
-            this.fimDeJogoVitoria();
-        } else {
-            this.faseAtual.clear();
-            this.faseAtual = gFase.carregarFase(this.nivelAtual);
-            this.atualizaCamera();
+        
+        // Fases 1-4 voltam para o Lobby (0)
+        if (this.nivelAtual >= 1 && this.nivelAtual <= 4) {
+             // NOVO: SALVA O PROGRESSO ANTES DE VOLTAR
+             this.fasesConcluidas.add(this.nivelAtual);
+             System.out.println("Fases Concluidas: " + this.fasesConcluidas.toString());
+             
+             this.iniciarFase(0); // Volta para o Lobby
+        } 
+        // Fase 5 leva para os Créditos (6)
+        else if (this.nivelAtual == 5) {
+            this.iniciarFase(6);
+        }
+        // Outros casos (Lobby 0, Créditos 6) reiniciam o jogo
+        else {
+            this.iniciarFase(0); 
         }
     }
     
+    // SUBSTITUIR gameOver()
     public void gameOver() {
         System.out.println("GAME OVER!");
-        // (Opcional: Mostrar uma tela de Game Over)
-        
-        // Reinicia o jogo do zero
-        this.nivelAtual = 1;
+        // Reinicia o jogo do zero (volta ao Lobby)
         this.vidas = 3;
         this.pontuacao = 0;
-        this.faseAtual.clear();
-        this.faseAtual = gFase.carregarFase(this.nivelAtual);
-        this.atualizaCamera();
+        this.iniciarFase(0);
     }
     
-    public void fimDeJogoVitoria() {
-        System.out.println("PARABENS, VOCE ZEROU O JOGO!");
-        System.out.println("Criado por: [Seu Nome Aqui]"); // Requisito 3 (Opcional) [cite: 42]
-        
-        // (Opcional: Travar o jogo aqui ou voltar ao menu)
-        
-        // Por enquanto, vamos só reiniciar o jogo
-        this.nivelAtual = 1;
-        this.vidas = 3;
-        this.pontuacao = 0;
-        this.faseAtual.clear();
-        this.faseAtual = gFase.carregarFase(this.nivelAtual);
-        this.atualizaCamera();
+    /**
+     * NOVO MÉTODO:
+     * Controla a lógica da Fase 5 (Sobrevivência).
+     * É chamado pelo 'paint()' quando o jogo está rodando.
+     */
+    private void processarFase5() {
+        this.faseTimer++;
+        this.spawnTimer++;
+
+        // 1 minuto = 60.000ms. Nosso tick (PERIOD) é 150ms.
+        // 60000 / 150 = 400 ticks.
+        if (this.faseTimer > 400) {
+            // Sobreviveu! Vai para os créditos.
+            this.iniciarFase(6); // 6 é CreditosFinais
+            return; // Para de processar
+        }
+
+        // A cada 3 segundos (3000ms / 150ms = 20 ticks), cria um inimigo
+        if (this.spawnTimer > 20) {
+            this.spawnTimer = 0; // Reseta o timer de spawn
+            
+            java.util.Random rand = new java.util.Random();
+            int tipoInimigo = rand.nextInt(2);
+            int linha = rand.nextInt(14) + 1; // Posição aleatória (evitando bordas)
+            int coluna = rand.nextInt(14) + 1;
+            
+            // Adiciona um inimigo aleatório (Chaser ou Caveira)
+            if (tipoInimigo == 0) {
+                // (Usando placeholder "chaser.png")
+                this.addPersonagem(new Chaser("chaser.png", linha, coluna));
+            } else {
+                // (Usando placeholder "caveira.png")
+                this.addPersonagem(new Caveira("caveira.png", linha, coluna));
+            }
+        }
     }
-    
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {

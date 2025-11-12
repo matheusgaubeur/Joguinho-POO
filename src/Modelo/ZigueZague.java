@@ -1,28 +1,39 @@
 package Modelo;
 
-import Auxiliar.Desenho;
 import java.util.Random;
 import java.io.Serializable;
 
-public class ZigueZague extends Animado implements Serializable, Mortal {
+/**
+ * Refatorado para herdar de InimigoPatrulha.
+ * Implementa um movimento aleatório (Norte, Sul, Leste, Oeste).
+ */
+public class ZigueZague extends InimigoPatrulha implements Serializable {
+    
+    private Random rand;
     
     public ZigueZague(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG,linha, coluna);
+        this.setbTransponivel(true);
+        rand = new Random();
     }
 
-    public void autoDesenho(){
-        Random rand = new Random();
-        int iDirecao = rand.nextInt(4);
+    /**
+     * Implementa a lógica de movimento aleatório.
+     */
+    @Override
+    public void proximoMovimento(){
+        int iDirecao = rand.nextInt(4); // Gera 0, 1, 2 ou 3
         
-        if(iDirecao == 1)
-            this.setPosicao(pPosicao.getLinha(), pPosicao.getColuna()+1);
+        if(iDirecao == 0)
+            this.moveUp();
+        else if(iDirecao == 1)
+            this.moveDown();
         else if(iDirecao == 2)
-            this.setPosicao(pPosicao.getLinha()+1, pPosicao.getColuna());
+            this.moveRight();
         else if(iDirecao == 3)
-            this.setPosicao(pPosicao.getLinha(), pPosicao.getColuna()-1);
-        else if(iDirecao == 4)
-            this.setPosicao(pPosicao.getLinha()-1, pPosicao.getColuna());
+            this.moveLeft();
         
-        super.autoDesenho();
+        // (Não precisamos mais do super.autoDesenho() aqui, 
+        // a classe pai cuida disso)
     }    
 }
