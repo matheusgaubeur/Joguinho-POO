@@ -1,39 +1,36 @@
 package Modelo;
 
+import Modelo.Comportamentos.Movimento.MovimentoZigueZague; // <<-- MUDANÇA
 import java.util.Random;
 import java.io.Serializable;
 
 /**
- * Refatorado para herdar de InimigoPatrulha.
- * Implementa um movimento aleatório (Norte, Sul, Leste, Oeste).
+ * Refatorado para o Padrão Strategy.
+ * A lógica de IA está em MovimentoZigueZague.java.
  */
-public class ZigueZague extends InimigoPatrulha implements Serializable {
+// <<-- MUDANÇA: 'extends InimigoPatrulha' se torna 'extends Personagem implements Mortal'
+public class ZigueZague extends Personagem implements Serializable, Mortal {
     
-    private Random rand;
+    // <<-- MUDANÇA: Atributo 'rand' removido.
+    
+    // (A velocidade padrão que InimigoPatrulha usava era 5)
+    private static final int VELOCIDADE_PADRAO = 5;
     
     public ZigueZague(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG,linha, coluna);
         this.setbTransponivel(true);
-        rand = new Random();
+        
+        // <<-- MUDANÇA: A MÁGICA
+        setComportamentoMovimento(
+            new MovimentoZigueZague(VELOCIDADE_PADRAO)
+        );
     }
 
-    /**
-     * Implementa a lógica de movimento aleatório.
-     */
+    // <<-- MUDANÇA: O método 'proximoMovimento()' foi MOVIDO para a Estratégia.
+
+    // (O 'aoColidirComHeroi()' da Onda 2 permanece)
     @Override
-    public void proximoMovimento(){
-        int iDirecao = rand.nextInt(4); // Gera 0, 1, 2 ou 3
-        
-        if(iDirecao == 0)
-            this.moveUp();
-        else if(iDirecao == 1)
-            this.moveDown();
-        else if(iDirecao == 2)
-            this.moveRight();
-        else if(iDirecao == 3)
-            this.moveLeft();
-        
-        // (Não precisamos mais do super.autoDesenho() aqui, 
-        // a classe pai cuida disso)
-    }    
+    public String aoColidirComHeroi() {
+        return "HERO_DIED";
+    }
 }

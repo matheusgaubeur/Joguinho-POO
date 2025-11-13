@@ -210,10 +210,15 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         
         // --- LÓGICA DE JOGO MODIFICADA ---
         if (!this.faseAtual.isEmpty()) {
-            this.cj.desenhaTudo(faseAtual);
             
-            // Pega o status do jogo (do ControleDeJogo modificado)
+            // <<-- MUDANÇA: PASSO 1 - ATUALIZAR LÓGICA (IA, Timers, Movimentos)
+            this.cj.atualizarTudo(faseAtual, getHero());
+            
+            // <<-- MUDANÇA: PASSO 2 - PROCESSAR COLISÕES E ESTADO DO JOGO
             String status = this.cj.processaTudo(faseAtual);
+            
+            // <<-- MUDANÇA: PASSO 3 - DESENHAR TUDO
+            this.cj.desenharTudo(faseAtual); // Renomeado de desenhaTudo
             
             // Age de acordo com o status
             switch (status) {

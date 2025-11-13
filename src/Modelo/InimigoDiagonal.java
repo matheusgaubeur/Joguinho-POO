@@ -1,54 +1,35 @@
 package Modelo;
 
+import Modelo.Comportamentos.Movimento.MovimentoDiagonal; // <<-- MUDANÇA
 import java.io.Serializable;
 
 /**
- * Novo personagem (requisito do PDF) com movimento diagonal.
- * Herda de InimigoPatrulha.
+ * Refatorado para o Padrão Strategy.
+ * A lógica de IA está em MovimentoDiagonal.java.
  */
-public class InimigoDiagonal extends InimigoPatrulha implements Serializable {
+// <<-- MUDANÇA: 'extends InimigoPatrulha' se torna 'extends Personagem implements Mortal'
+public class InimigoDiagonal extends Personagem implements Serializable, Mortal {
 
-    private boolean bCima;
-    private boolean bDireita;
+    // <<-- MUDANÇA: Atributos 'bCima' e 'bDireita' removidos.
+    
+    // (A velocidade padrão que InimigoPatrulha usava era 5)
+    private static final int VELOCIDADE_PADRAO = 5;
 
     public InimigoDiagonal(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        this.bCima = true;
-        this.bDireita = true;
-        
-        // Inimigos de patrulha não devem ser obstáculos
         this.setbTransponivel(true); 
+        
+        // <<-- MUDANÇA: A MÁGICA
+        setComportamentoMovimento(
+            new MovimentoDiagonal(VELOCIDADE_PADRAO)
+        );
     }
 
-    /**
-     * Implementa a lógica de movimento diagonal (bate-volta).
-     */
+    // <<-- MUDANÇA: O método 'proximoMovimento()' foi MOVIDO para a Estratégia.
+    
+    // (O 'aoColidirComHeroi()' da Onda 2 permanece)
     @Override
-    public void proximoMovimento() {
-        boolean moveuVertical = false;
-        boolean moveuHorizontal = false;
-
-        // Tenta mover Vertical
-        if (bCima) {
-            moveuVertical = this.moveUp();
-        } else {
-            moveuVertical = this.moveDown();
-        }
-
-        // Tenta mover Horizontal
-        if (bDireita) {
-            moveuHorizontal = this.moveRight();
-        } else {
-            moveuHorizontal = this.moveLeft();
-        }
-
-        // Lógica de "Bater": Se não conseguiu mover para um lado,
-        // inverte a direção daquele eixo.
-        if (!moveuVertical) {
-            bCima = !bCima;
-        }
-        if (!moveuHorizontal) {
-            bDireita = !bDireita;
-        }
+    public String aoColidirComHeroi() {
+        return "HERO_DIED";
     }
 }

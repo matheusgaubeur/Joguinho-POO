@@ -20,11 +20,12 @@ public class Fase3 implements IFase {
         fase.add(new ItemChave("coracao.png", 1, 1)); 
         
         // 3. Adiciona Inimigos Iniciais (Jacaré e Capivara)
-        // Jacaré (Atirador, usando "caveira.png" como placeholder)
         fase.add(new Jacare("caveira.png", 7, 14)); // Atira BolaDeLama para a esquerda
-        
-        // Capivara (Vai-Vem, usando "roboPink.png" como placeholder)
-        fase.add(new BichinhoVaiVemHorizontal("roboPink.png", 14, 1));
+        fase.add(new BichinhoVaiVemHorizontal("roboPink.png", 14, 1)); // Capivara
+
+        // <<-- MUDANÇA: Adiciona inimigo de patrulha da Fase 3 (InimigoCircular)
+        // (Usando "skoot.png" como placeholder)
+        fase.add(new InimigoCircular("skoot.png", 10, 10));
 
         // 4. Adiciona Paredes/Obstáculos do Mapa (Bordas)
         // (Usando "bricks.png" como placeholder de "tronco.png")

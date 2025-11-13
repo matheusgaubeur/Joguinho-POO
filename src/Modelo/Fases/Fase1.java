@@ -16,11 +16,11 @@ public class Fase1 implements IFase {
         // 1. Adiciona o Herói
         fase.add(new Hero(getHeroSkin(), 1, 1));
         
-        // 2. Adiciona os 3 Itens-Chave
+        // 2. Adiciona o PRIMEIRO Item-Chave
         // (Usando "coracao.png" como placeholder, pois você o tem)
-        fase.add(new ItemChave("coracao.png", 1, 14));
-        fase.add(new ItemChave("coracao.png", 14, 1));
-        fase.add(new ItemChave("coracao.png", 14, 14));
+        fase.add(new ItemChave("coracao.png", 1, 14)); // <<-- MUDANÇA (Apenas o primeiro fica)
+        //fase.add(new ItemChave("coracao.png", 14, 1));   // <<-- MUDANÇA (Movido para Coleta_1)
+        //fase.add(new ItemChave("coracao.png", 14, 14)); // <<-- MUDANÇA (Movido para Coleta_2)
         
         // 3. Adiciona Inimigos Iniciais (Baleia)
         // (Usando a classe Caveira com skin de "baleia.png" (placeholder))
@@ -49,6 +49,10 @@ public class Fase1 implements IFase {
         for(int i = 1; i < 10; i++) {
              barreiras.add(new Parede("caveira.png", 10, i));
         }
+        
+        // Adiciona o SEGUNDO ItemChave
+        barreiras.add(new ItemChave("coracao.png", 14, 1)); // <<-- MUDANÇA (Item 2)
+        
         return barreiras;
     }
 
@@ -59,6 +63,10 @@ public class Fase1 implements IFase {
         
         // (Usando a classe Chaser com a imagem "robo.png" como placeholder)
         chefao.add(new Chaser("robo.png", 13, 13));
+        
+        // Adiciona o TERCEIRO ItemChave
+        chefao.add(new ItemChave("coracao.png", 14, 14)); // <<-- MUDANÇA (Item 3)
+        
         return chefao;
     }
 
@@ -84,6 +92,6 @@ public class Fase1 implements IFase {
     
     @Override
     public String getMensagemInicial() {
-        return "ÁGUA EM ABUNDANCIA!\nHerói, tome cuidado com os Peixes, Pinguins e a BALEIA!!!";
+        return "ÁGUA EM ABUNDANCIA!\nHerói, tome cuidado com os Peixes,\nPinguins e a BALEIA!!!";
     }
 }

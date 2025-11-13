@@ -1,41 +1,43 @@
 package Modelo;
 
+import Modelo.Comportamentos.Movimento.MovimentoCircular; // <<-- MUDANÇA
 import java.io.Serializable;
 
 /**
  * Novo personagem (requisito do PDF) com movimento circular (horário).
- * Herda de InimigoPatrulha.
+ * Refatorado para o Padrão Strategy.
  */
-public class InimigoCircular extends InimigoPatrulha implements Serializable {
+// <<-- MUDANÇA: 'extends InimigoPatrulha' se torna 'extends Personagem implements Mortal'
+public class InimigoCircular extends Personagem implements Serializable, Mortal {
 
-    // 0: Direita, 1: Baixo, 2: Esquerda, 3: Cima
-    private int direcaoAtual; 
+    // <<-- MUDANÇA: Atributo 'direcaoAtual' removido.
+    
+    // (A velocidade padrão que InimigoPatrulha usava era 5)
+    private static final int VELOCIDADE_PADRAO = 5;
 
     public InimigoCircular(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        this.direcaoAtual = 0; // Começa movendo para Direita
-        this.setbTransponivel(true);
+        
+        // Inimigos de patrulha não devem ser obstáculos
+        this.setbTransponivel(true); 
+        
+        // <<-- MUDANÇA: A MÁGICA
+        // Dizemos a este Personagem qual "cérebro" de movimento ele deve usar.
+        setComportamentoMovimento(
+            new MovimentoCircular(VELOCIDADE_PADRAO)
+        );
+        // setComportamentoAtaque(new AtaqueNulo()); // Já é o padrão
     }
 
     /**
      * Implementa a lógica de movimento circular.
      * Tenta mover na direção atual. Se bater, tenta a próxima direção.
      */
-    @Override
-    public void proximoMovimento() {
-        boolean moveu = false;
-        
-        // Tenta mover na direção atual
-        switch (direcaoAtual) {
-            case 0: moveu = this.moveRight(); break;
-            case 1: moveu = this.moveDown(); break;
-            case 2: moveu = this.moveLeft(); break;
-            case 3: moveu = this.moveUp(); break;
-        }
+    // <<-- MUDANÇA: O método 'proximoMovimento()' foi MOVIDO para a Estratégia.
 
-        // Se não moveu (bateu na parede), vira 90 graus (próxima direção)
-        if (!moveu) {
-            direcaoAtual = (direcaoAtual + 1) % 4;
-        }
+    // (O 'aoColidirComHeroi()' da Onda 2 permanece)
+    @Override
+    public String aoColidirComHeroi() {
+        return "HERO_DIED";
     }
 }

@@ -20,10 +20,14 @@ public class Fase4 implements IFase {
         // (Usando "coracao.png" como placeholder)
         fase.add(new ItemChave("coracao.png", 14, 7)); // Embaixo
         
-        // 3. Adiciona Inimigos Iniciais (Robô Atirador)
+        // 3. Adiciona Inimigos Iniciais
         fase.add(new RoboAtirador("robo.png", 1, 1)); // Canto superior esquerdo
         fase.add(new RoboAtirador("robo.png", 1, 14)); // Canto superior direito
 
+        // <<-- MUDANÇA: Adiciona inimigo de patrulha da Fase 4 (ZigueZague)
+        // (Usando "robo.png" como placeholder)
+        fase.add(new ZigueZague("robo.png", 5, 7));
+        
         // 4. Adiciona Paredes/Obstáculos (Raios Estáticos)
         // (Usando "bricks.png" como placeholder de "raio_parede.png")
         for (int i = 0; i < 16; i++) {

@@ -12,7 +12,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-public class Hero extends Animado implements Serializable{
+public class Hero extends Personagem implements Serializable{
     public Hero(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG,linha, coluna);
     }

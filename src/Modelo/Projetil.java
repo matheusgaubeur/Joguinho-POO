@@ -2,6 +2,7 @@ package Modelo;
 
 import Auxiliar.Desenho;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * CLASSE ABSTRATA para todos os projéteis (Bolhas, Fogo, Lama, etc.)
@@ -21,12 +22,24 @@ public abstract class Projetil extends Personagem implements Serializable, Morta
      */
     public abstract boolean move();
     
+    // <<-- MUDANÇA: Renomeado de autoDesenho() para atualizar()
     @Override
-    public void autoDesenho() {
-        super.autoDesenho();
+    public void atualizar(ArrayList<Personagem> faseAtual, Hero hero) {
+        // <<-- MUDANÇA: Removido o super.autoDesenho()
         
         // Se o movimento falhar (bater na borda), o projétil é removido.
         if(!this.move())
             Desenho.acessoATelaDoJogo().removePersonagem(this);
+    }
+    
+    // <<-- MUDANÇA: Adicionado método desenhar()
+    @Override
+    public void desenhar() {
+        super.desenhar();
+    }
+    
+    @Override
+    public String aoColidirComHeroi() {
+        return "HERO_DIED";
     }
 }

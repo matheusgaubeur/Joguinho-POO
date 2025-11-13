@@ -1,20 +1,30 @@
 package Modelo;
 
+import Modelo.Comportamentos.Ataque.ComportamentoAtaqueAtirador;
+import Modelo.Comportamentos.Ataque.IFabricaProjetil;
+import auxiliar.Posicao;
 import java.io.Serializable;
 
+// <<-- MUDANÇA: Implementa a fábrica para si mesma
+class FabricaLama implements IFabricaProjetil {
+    public Personagem criarProjetil(Posicao p) {
+        return new BolaDeLama("fire.png", p.getLinha(), p.getColuna() + 1);
+    }
+}
 /**
  * Inimigo da Fase 3. Herda de InimigoAtirador.
  * Dispara Bolas de Lama.
  */
-public class Jacare extends InimigoAtirador implements Serializable {
+public class Jacare extends Personagem implements Serializable {
     
     public Jacare(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-    }
-
-    @Override
-    public Personagem criarProjetil() {
-        // (Usando "bomba.png" como placeholder, precisamos de "bola_lama.png")
-        return new BolaDeLama("bomba.png", pPosicao.getLinha(), pPosicao.getColuna() - 1);
+        this.setbTransponivel(false);
+        
+        // <<-- MUDANÇA: Configura as Estratégias
+        // setComportamentoMovimento(new MovimentoParado()); // Já é o padrão
+        setComportamentoAtaque(
+            new ComportamentoAtaqueAtirador(new FabricaLama())
+        );
     }
 }

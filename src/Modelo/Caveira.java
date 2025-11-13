@@ -1,21 +1,32 @@
 package Modelo;
 
-
+import Modelo.Comportamentos.Ataque.ComportamentoAtaqueAtirador;
+import Modelo.Comportamentos.Ataque.IFabricaProjetil;
+import auxiliar.Posicao;
 import java.io.Serializable;
 
-/**
- * Inimigo clássico. Refatorado para herdar de InimigoAtirador.
- * A única responsabilidade é dizer QUE projétil ela cria.
- */
-public class Caveira extends InimigoAtirador implements Serializable {
+// <<-- MUDANÇA: Implementa a fábrica para si mesma
+class FabricaFogo implements IFabricaProjetil {
+    public Personagem criarProjetil(Posicao p) {
+        return new Fogo("fire.png", p.getLinha(), p.getColuna() + 1);
+    }
+}
+
+public class Caveira extends Personagem implements Serializable {
     
     public Caveira(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
+        this.setbTransponivel(false);
+        
+        // <<-- MUDANÇA: Configura as Estratégias
+        // setComportamentoMovimento(new MovimentoParado()); // Já é o padrão
+        setComportamentoAtaque(
+            new ComportamentoAtaqueAtirador(new FabricaFogo())
+        );
     }
-
-    @Override
-    public Personagem criarProjetil() {
-        // A Caveira cria Fogo que sai de sua posição.
-        return new Fogo("fire.png", pPosicao.getLinha(), pPosicao.getColuna() + 1);
-    }
+    
+    // <<-- MUDANÇA: Não precisa mais do 'atualizar()' ou 'desenhar()',
+    // a lógica foi movida para a Estratégia!
+    
+    // <<-- MUDANÇA: O 'criarProjetil()' foi movido para sua própria fábrica.
 }

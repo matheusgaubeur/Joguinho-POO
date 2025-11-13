@@ -1,33 +1,41 @@
 package Modelo;
 
+import Modelo.Comportamentos.Movimento.MovimentoVaiVemHorizontal; // <<-- MUDANÇA
 import java.io.Serializable;
 
 /**
- * Refatorado para herdar de InimigoPatrulha.
- * Não controla mais o timer, apenas a lógica de direção.
+ * Representa o inimigo "Capivara" (Fase 3).
+ * ESTA CLASSE NÃO TEM MAIS LÓGICA DE IA.
+ * Ela apenas estende Personagem e, em seu construtor,
+ * DEFINE sua estratégia de movimento.
  */
-public class BichinhoVaiVemHorizontal extends InimigoPatrulha implements Serializable {
+// <<-- MUDANÇA: 'extends InimigoPatrulha' se torna 'extends Personagem'
+public class BichinhoVaiVemHorizontal extends Personagem implements Serializable, Mortal {
 
-    private boolean bRight;
+    // <<-- MUDANÇA: Atributos 'bRight' e 'contador' removidos.
+    
+    // (A velocidade padrão que InimigoPatrulha usava era 5)
+    private static final int VELOCIDADE_PADRAO = 5;
 
     public BichinhoVaiVemHorizontal(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        bRight = true;
-        // this.bTransponivel = false; // Original era false, vamos manter.
+        
+        // <<-- MUDANÇA: 'bTransponivel' era 'false' no código antigo
         this.setbTransponivel(false); 
+        
+        // <<-- MUDANÇA: A MÁGICA
+        // Dizemos a este Personagem qual "cérebro" de movimento ele deve usar.
+        setComportamentoMovimento(
+            new MovimentoVaiVemHorizontal(VELOCIDADE_PADRAO)
+        );
+        // setComportamentoAtaque(new AtaqueNulo()); // Já é o padrão
     }
 
-    /**
-     * Implementa o "buraco" da classe pai.
-     * Esta é a única lógica que esta classe precisa saber.
-     */
+    // <<-- MUDANÇA: O método 'proximoMovimento()' foi MOVIDO para a Estratégia.
+    
+    // (O 'aoColidirComHeroi()' da Onda 2 permanece)
     @Override
-    public void proximoMovimento() {
-        if (bRight) {
-            this.moveRight();
-        } else {
-            this.moveLeft();
-        }
-        bRight = !bRight; // Inverte a direção para o próximo loop
+    public String aoColidirComHeroi() {
+        return "HERO_DIED";
     }
 }

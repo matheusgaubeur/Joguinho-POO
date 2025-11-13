@@ -11,9 +11,19 @@ import java.util.ArrayList;
 
 public class ControleDeJogo {
     
-    public void desenhaTudo(ArrayList<Personagem> e) {
+// <<-- MUDANÇA: Renomeado para "desenharTudo"
+    public void desenharTudo(ArrayList<Personagem> e) {
         for (int i = 0; i < e.size(); i++)
-            e.get(i).autoDesenho();
+            e.get(i).desenhar(); // <<-- MUDANÇA: Chamando o novo método desenhar()
+    }
+    
+    // <<-- MUDANÇA: Novo método para ATUALIZAR a lógica de IA
+    public void atualizarTudo(ArrayList<Personagem> umaFase, Hero hero) {
+        // (Note que o Heroi não precisa de um 'atualizar' proativo, 
+        // mas alguns personagens, como o Chaser, precisam saber onde ele está)
+        for (int i = 0; i < umaFase.size(); i++) {
+            umaFase.get(i).atualizar(umaFase, hero);
+        }
     }
     
     public String processaTudo(ArrayList<Personagem> umaFase) {
@@ -25,45 +35,34 @@ public class ControleDeJogo {
             
             if (hero.getPosicao().igual(pIesimoPersonagem.getPosicao())) {
                 
-                // 1. O personagem é Mortal?
-                if (pIesimoPersonagem instanceof Mortal) {
-                    return "HERO_DIED";
+                // 1. Pergunta ao personagem o que fazer na colisão
+                String resultadoColisao = pIesimoPersonagem.aoColidirComHeroi();
                 
-                // 2. É um Portal?
-                } else if (pIesimoPersonagem instanceof Modelo.Portal) {
-                    Modelo.Portal portal = (Modelo.Portal) pIesimoPersonagem;
-                    int destino = portal.getDestinoFase();
-                    
-                    // --- AQUI ESTÁ A CORREÇÃO ---
-                    if (destino == 0) {
-                        // Destino 0 = Fim da Fase (volta ao Lobby)
-                        return "FASE_CONCLUIDA"; // <<-- MUDANÇA CRÍTICA
-                    } else {
-                        // Destino 1,2,3,4,5 = Portal de Viagem
-                        return "PORTAL_FASE_" + destino; 
-                    }
-                    // --- FIM DA CORREÇÃO ---
-                    
-                // 3. É um ItemChave (os 3 colecionáveis)?
-                } else if (pIesimoPersonagem instanceof Modelo.ItemChave) {
+                // 2. Trata os casos especiais (remoção de item)
+                if (resultadoColisao.equals("ITEM_COLETADO")) {
                     umaFase.remove(pIesimoPersonagem); 
                     return "ITEM_COLETADO"; 
-                    
-                // 4. É algum outro Coletavel (ex: moeda, vida extra)?
-                } else if (pIesimoPersonagem instanceof Coletavel) {
+                
+                } else if (resultadoColisao.equals("PONTOS")) {
+                    // (Lógica para coletáveis genéricos, se tivéssemos)
                     umaFase.remove(pIesimoPersonagem);
                     return "PONTOS";
+                
+                } else if (!resultadoColisao.equals("GAME_RUNNING")) {
+                    // Retorna "HERO_DIED", "FASE_CONCLUIDA", "PORTAL_FASE_X", etc.
+                    return resultadoColisao;
                 }
+
             }
         }
         
         // Atualiza a direção dos Chasers
-        for (int i = 1; i < umaFase.size(); i++) {
-            pIesimoPersonagem = umaFase.get(i);
-            if (pIesimoPersonagem instanceof Chaser) {
-                ((Chaser) pIesimoPersonagem).computeDirection(hero.getPosicao());
-            }
-        }
+//        for (int i = 1; i < umaFase.size(); i++) {
+//            pIesimoPersonagem = umaFase.get(i);
+//            if (pIesimoPersonagem instanceof Chaser) {
+//                ((Chaser) pIesimoPersonagem).computeDirection(hero.getPosicao());
+//            }
+//        }
         
         return "GAME_RUNNING";
     }
