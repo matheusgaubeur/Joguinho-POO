@@ -19,7 +19,7 @@ public class InimigoCircular extends Personagem implements Serializable, Mortal 
         super(sNomeImagePNG, linha, coluna);
         
         // Inimigos de patrulha não devem ser obstáculos
-        this.setbTransponivel(true); 
+        this.setbTransponivel(false); 
         
         // <<-- MUDANÇA: A MÁGICA
         // Dizemos a este Personagem qual "cérebro" de movimento ele deve usar.

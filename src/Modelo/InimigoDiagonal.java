@@ -17,7 +17,7 @@ public class InimigoDiagonal extends Personagem implements Serializable, Mortal 
 
     public InimigoDiagonal(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        this.setbTransponivel(true); 
+        this.setbTransponivel(false); 
         
         // <<-- MUDANÇA: A MÁGICA
         setComportamentoMovimento(

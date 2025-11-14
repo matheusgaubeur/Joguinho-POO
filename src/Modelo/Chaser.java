@@ -23,7 +23,7 @@ public class Chaser extends Personagem implements Serializable, Mortal {
 
     public Chaser(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        this.bTransponivel = true;
+        this.bTransponivel = false;
         
         // <<-- MUDANÇA: Configura a Estratégia
         setComportamentoMovimento(new MovimentoChaser());

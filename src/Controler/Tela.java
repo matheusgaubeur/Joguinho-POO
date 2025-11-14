@@ -52,9 +52,12 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import Modelo.Fases.IFase;
+import Modelo.InimigoCircular;
+import Modelo.InimigoDiagonal;
 import Modelo.Portal;
 import Modelo.ItemChave;
 import Modelo.Mensagem;
+import Modelo.RoboAtirador;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.util.Random;
@@ -130,6 +133,9 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
         // Carrega a nova configuração de fase
         this.configFaseAtual = gFase.getFase(this.idFaseAtual);
+        if (this.configFaseAtual instanceof Modelo.Fases.Lobby) {
+            ((Modelo.Fases.Lobby) this.configFaseAtual).atualizarFasesConcluidas(this.fasesConcluidas);
+        }
         if (this.configFaseAtual == null) {
             System.err.println("ERRO: Tentando carregar fase inexistente ID: " + this.idFaseAtual);
             return;
@@ -159,10 +165,16 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             msgParaMostrar = this.configFaseAtual.getMensagemInicial();
         }
 
-        // Mostra a mensagem (se ela existir)
-        if (msgParaMostrar != null && !msgParaMostrar.isEmpty()) {
-            // Usando nosso sistema de pausa que já implementamos!
-            this.addPersonagem(new Mensagem(msgParaMostrar, true));
+//
+        // CASO 3: Se a fase que acabamos de carregar for a de Créditos,
+        // precisamos anexar a mensagem de "vitória" (os autores) à
+        // mensagem "inicial" (o "FIM DE JOGO!").
+        if (this.configFaseAtual instanceof Modelo.Fases.CreditosFinais) {
+            String msgAutores = this.configFaseAtual.getMensagemVitoria();
+            if (msgAutores != null && !msgAutores.isEmpty()) {
+                // Concatena as duas mensagens
+                msgParaMostrar = msgParaMostrar + "\n\n" + msgAutores;
+            }
         }
 
         // Reseta a pontuação de coleta (lógica dos 3 itens)
@@ -319,6 +331,9 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                         // Não faz nada, o jogo continua
                         break;
                 } // Fim do switch(status)
+                if (this.idFaseAtual == 5) {
+                    processarFase5();
+                }
                 
             } // <--- Fim do "if (!this.isGamePaused)"
             // -----------------------------------------------------------------
@@ -494,7 +509,11 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         this.setTitle("X: " + x + ", Y: " + y
                 + " -> Cell: " + (y / Consts.CELL_SIDE) + ", " + (x / Consts.CELL_SIDE));
 
-        this.getHero().getPosicao().setPosicao(y / Consts.CELL_SIDE, x / Consts.CELL_SIDE);
+        // Calcula a posição no *GRID* (levando em conta a câmera)
+        int dropLinha = (y / Consts.CELL_SIDE) + getCameraLinha();
+        int dropColuna = (x / Consts.CELL_SIDE) + getCameraColuna();
+
+        this.getHero().getPosicao().setPosicao(dropLinha, dropColuna);
 
         repaint();
     }
@@ -537,23 +556,19 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     
     public void reiniciarFase() {
         System.out.println("Voce morreu! Vidas restantes: " + this.vidas);
-        this.iniciarFase(this.nivelAtual); // Apenas recarrega o nível atual
+        this.iniciarFase(this.idFaseAtual); //
     }
     
     public void proximaFase() {
         this.pontuacao += 100;
         System.out.println("Passou de fase! Pontos: " + this.pontuacao);
         
-        // Fases 1-4 voltam para o Lobby (0)
-        if (this.nivelAtual >= 1 && this.nivelAtual <= 4) {
-             // NOVO: SALVA O PROGRESSO ANTES DE VOLTAR
-             this.fasesConcluidas.add(this.nivelAtual);
-             System.out.println("Fases Concluidas: " + this.fasesConcluidas.toString());
-             
-             this.iniciarFase(0); // Volta para o Lobby
+        if (this.idFaseAtual >= 1 && this.idFaseAtual <= 4) { // <-- MUDOU
+            this.fasesConcluidas.add(this.idFaseAtual); // <-- MUDOU
+            System.out.println("Fases Concluidas: " + this.fasesConcluidas.toString());
+            this.iniciarFase(0);
         } 
-        // Fase 5 leva para os Créditos (6)
-        else if (this.nivelAtual == 5) {
+        else if (this.idFaseAtual == 5) { // <-- MUDOU
             this.iniciarFase(6);
         }
         // Outros casos (Lobby 0, Créditos 6) reiniciam o jogo
@@ -566,44 +581,67 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     public void gameOver() {
         System.out.println("GAME OVER!");
         // Reinicia o jogo do zero (volta ao Lobby)
-        this.vidas = 3;
+        this.vidas = 10;
         this.pontuacao = 0;
         this.iniciarFase(0);
     }
     
-    /**
-     * NOVO MÉTODO:
+/**
+     * NOVO MÉTODO: (VERSÃO TURBINADA)
      * Controla a lógica da Fase 5 (Sobrevivência).
-     * É chamado pelo 'paint()' quando o jogo está rodando.
      */
     private void processarFase5() {
         this.faseTimer++;
         this.spawnTimer++;
 
-        // 1 minuto = 60.000ms. Nosso tick (PERIOD) é 150ms.
-        // 60000 / 150 = 400 ticks.
+        // 1 minuto = 400 ticks (400 * 150ms = 60000ms)
         if (this.faseTimer > 400) {
-            // Sobreviveu! Vai para os créditos.
             this.iniciarFase(6); // 6 é CreditosFinais
-            return; // Para de processar
+            return;
         }
 
-        // A cada 3 segundos (3000ms / 150ms = 20 ticks), cria um inimigo
-        if (this.spawnTimer > 20) {
+        // --- LÓGICA DE DIFICULDADE PROGRESSIVA ---
+        int spawnMaxTicks = 20; // Padrão: 3 segundos
+        if (this.faseTimer > 200) { // Na metade do tempo (30s)
+            spawnMaxTicks = 10; // Dobra a velocidade de spawn! (1.5s)
+        }
+        // --- FIM DA LÓGICA ---
+
+        if (this.spawnTimer > spawnMaxTicks) {
             this.spawnTimer = 0; // Reseta o timer de spawn
             
             java.util.Random rand = new java.util.Random();
-            int tipoInimigo = rand.nextInt(2);
+            int tipoInimigo = rand.nextInt(5); // AGORA SPAWNA 5 TIPOS!
             int linha = rand.nextInt(14) + 1; // Posição aleatória (evitando bordas)
             int coluna = rand.nextInt(14) + 1;
             
-            // Adiciona um inimigo aleatório (Chaser ou Caveira)
-            if (tipoInimigo == 0) {
-                // (Usando placeholder "chaser.png")
-                this.addPersonagem(new Chaser("chaser.png", linha, coluna));
-            } else {
-                // (Usando placeholder "caveira.png")
-                this.addPersonagem(new Caveira("caveira.png", linha, coluna));
+            // Evita spawnar em cima das paredes internas da Fase 5
+            if((linha == 4 || linha == 11) && (coluna >= 4 && coluna <= 11)){
+                linha = 7; // Joga pro meio se cair na parede
+                coluna = 7;
+            }
+
+            switch(tipoInimigo) {
+                case 0:
+                    // O Perseguidor (Clássico)
+                    this.addPersonagem(new Chaser("chaser.png", linha, coluna));
+                    break;
+                case 1:
+                    // O Atirador de Bombas! (Mais perigoso que a Caveira)
+                    this.addPersonagem(new RoboAtirador("robo.png", linha, coluna));
+                    break;
+                case 2:
+                    // O Caótico ZigueZague
+                    this.addPersonagem(new ZigueZague("skoot.png", linha, coluna));
+                    break;
+                case 3:
+                    // O Patrulha Circular
+                    this.addPersonagem(new InimigoCircular("roboPink.png", linha, coluna));
+                    break;
+                case 4:
+                    // O Patrulha Diagonal
+                    this.addPersonagem(new InimigoDiagonal("roboPink.png", linha, coluna));
+                    break;
             }
         }
     }

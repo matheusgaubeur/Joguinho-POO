@@ -18,8 +18,7 @@ public class Cadeado extends Personagem {
     public String aoColidirComHeroi(Hero h) { // <<-- Assinatura corrigida
         if (h.temChave()) {
             h.usarChave();
-            Desenho.acessoATelaDoJogo().removePersonagem(this); 
-            return "GAME_RUNNING";
+            return "CADEADO_ABERTO";
         }
 
         // <<-- LÓGICA NOVA: Empurra o Herói

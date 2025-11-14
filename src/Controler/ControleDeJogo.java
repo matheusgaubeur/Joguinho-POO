@@ -63,7 +63,15 @@ public class ControleDeJogo {
                 } else if (resultadoColisao.equals("CHAVE_COLETADA")) {
                     umaFase.remove(pIesimoPersonagem); // A REMOÇÃO É AQUI!
                     return "CHAVE_COLETADA"; // Retorna imediatamente (evita erro)
+                    
+                } else if (resultadoColisao.equals("BAU_ABERTO")) {
+                    umaFase.remove(pIesimoPersonagem); // Agora o Controle remove o baú
+                    return "BAU_ABERTO"; // E avisa a Tela
 
+                } else if (resultadoColisao.equals("CADEADO_ABERTO")) {
+                    umaFase.remove(pIesimoPersonagem); // Agora o Controle remove o cadeado
+                    return "GAME_RUNNING"; // Abrir um cadeado não precisa de mais lógica
+                    
                 } else if (resultadoColisao.equals("PONTOS")) {
                     // (Lógica para coletáveis genéricos, se tivéssemos)
                     umaFase.remove(pIesimoPersonagem);

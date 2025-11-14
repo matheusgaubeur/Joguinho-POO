@@ -16,7 +16,6 @@ public class Bau extends Personagem {
     public String aoColidirComHeroi(Hero h) {
         if (h.temChave()) {
             h.usarChave(); 
-            Desenho.acessoATelaDoJogo().removePersonagem(this); 
             return "BAU_ABERTO"; // Sucesso! Sorteio rola.
         }
         
