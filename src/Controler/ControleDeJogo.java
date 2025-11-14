@@ -21,7 +21,7 @@ public class ControleDeJogo {
         // (Note que o Heroi não precisa de um 'atualizar' proativo, 
         // mas alguns personagens, como o Chaser, precisam saber onde ele está)
         for (int i = 0; i < umaFase.size(); i++) {
-            Personagem p = umaFase.get(i);
+            Personagem p = umaFase.get(i); 
 
             // SE O JOGO ESTIVER PAUSADO:
             if (isGamePaused) {
@@ -34,6 +34,11 @@ public class ControleDeJogo {
             else {
                 // Atualiza TODO MUNDO (Inimigos, Projéteis, etc.)
                 p.atualizar(umaFase, hero);
+            }
+            
+            // Após atualizar, checa se a flag 'bEstaVivo' foi setada para false
+            if (!p.isVivo()) {
+                umaFase.remove(i);
             }
         }
     }
@@ -58,7 +63,11 @@ public class ControleDeJogo {
                 // 2. Trata os casos especiais (remoção de item)
                 if (resultadoColisao.equals("ITEM_COLETADO")) {
                     umaFase.remove(pIesimoPersonagem); 
-                    return "ITEM_COLETADO"; 
+                    return "ITEM_COLETADO";
+                
+                } else if (resultadoColisao.equals("MUNICAO_COLETADA")) {
+                    umaFase.remove(pIesimoPersonagem); // <<-- ESTA É A LINHA QUE FALTAVA
+                    return "MUNICAO_COLETADA";
                     
                 } else if (resultadoColisao.equals("CHAVE_COLETADA")) {
                     umaFase.remove(pIesimoPersonagem); // A REMOÇÃO É AQUI!

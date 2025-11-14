@@ -65,6 +65,13 @@ public class Fase1 implements IFase {
         // (Usando "esfera.png" como placeholder da imagem do Baú)
         fase.add(new Bau("roboPink.png", 5, 4));
         
+        // Adiciona munição na frente do herói (use a imagem 'coracao.png' como placeholder)
+        fase.add(new Municao("bullet.png", 1, 2));
+
+        // Adiciona um alvo fácil (ZigueZague) à direita
+        // (use "skoot.png" ou "roboPink.png" como placeholder)
+        fase.add(new ZigueZague("skoot.png", 1, 4));
+        
         
         // -----------------------------------------------------------------
         // 4. Adiciona Paredes do Mapa (Bordas - Intocadas)

@@ -4,6 +4,7 @@ import Auxiliar.Consts;
 import Auxiliar.Desenho;
 import Controler.ControleDeJogo;
 import Controler.Tela;
+import auxiliar.Posicao;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.io.IOException;
@@ -14,6 +15,8 @@ import javax.swing.JPanel;
 
 public class Hero extends Personagem implements Serializable{
     private int numChaves = 0;
+    private int nMunicao = 5; // Começa com 5 balas
+    private int ultimaDirecao = 3; // 0=Cima, 1=Baixo, 2=Esquerda, 3=Direita (padrão)
 
     public Hero(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG,linha, coluna);
@@ -34,6 +37,38 @@ public class Hero extends Personagem implements Serializable{
             System.out.println("Chave usada! Restantes: " + this.numChaves);
         }
     }
+    
+    // ADICIONE ESTES DOIS NOVOS MÉTODOS
+    public void adicionarMunicao(int quantidade) {
+        this.nMunicao += quantidade;
+        System.out.println("Munição coletada! Total: " + this.nMunicao);
+    }
+    
+    public void atacar() {
+        if (nMunicao <= 0) {
+            System.out.println("Sem munição!");
+            return; // Não pode atirar
+        }
+        
+        this.nMunicao--;
+        System.out.println("Tiro! Munição restante: " + this.nMunicao);
+        
+        // ESTA É A LINHA CORRIGIDA (Erro 2)
+        Posicao p = new Posicao(this.getPosicao().getLinha(), this.getPosicao().getColuna());
+        
+        // Ajusta a posição de spawn do projétil
+        if(ultimaDirecao == 0) p.moveUp();
+        else if(ultimaDirecao == 1) p.moveDown();
+        else if(ultimaDirecao == 2) p.moveLeft();
+        else p.moveRight();
+        
+        // (Usando "fire.png" como placeholder por enquanto)
+        ProjetilHeroi proj = new ProjetilHeroi("fire.png", p.getLinha(), p.getColuna(), this.ultimaDirecao);
+        
+        // Adiciona o projétil ao jogo (pela forma que o protótipo usa)
+        Desenho.acessoATelaDoJogo().addPersonagem(proj);
+    }
+    
     public void voltaAUltimaPosicao(){
         this.pPosicao.volta();
     }
@@ -57,29 +92,38 @@ public class Hero extends Personagem implements Serializable{
         return true;       
     }
     
+    // MODIFICAR MÉTODOS DE MOVIMENTO
+    @Override
     public boolean moveUp() {
+        this.ultimaDirecao = 0; // <<-- ADICIONAR
         if(super.moveUp())
             return validaPosicao();
         return false;
     }
 
+    @Override
     public boolean moveDown() {
+        this.ultimaDirecao = 1; // <<-- ADICIONAR
         if(super.moveDown())
             return validaPosicao();
         return false;
     }
 
+    @Override
+    public boolean moveLeft() {
+        this.ultimaDirecao = 2; // <<-- ADICIONAR
+        if(super.moveLeft())
+            return validaPosicao();
+        return false;
+    }   
+
+    @Override
     public boolean moveRight() {
+        this.ultimaDirecao = 3; // <<-- ADICIONAR
         if(super.moveRight())
             return validaPosicao();
         return false;
     }
-
-    public boolean moveLeft() {
-        if(super.moveLeft())
-            return validaPosicao();
-        return false;
-    }    
     
     public void setSkin(String sNomeImagePNG) {
         try {

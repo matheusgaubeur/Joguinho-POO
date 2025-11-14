@@ -21,9 +21,9 @@ public abstract class Personagem implements Serializable {
     protected ImageIcon iImage;
     protected Posicao pPosicao;
     protected boolean bTransponivel;
-    // <<-- MUDANÇA: Atributos de Estratégia
     private ComportamentoMovimento meuMovimento;
     private ComportamentoAtaque meuAtaque;
+    protected boolean bEstaVivo = true;
 
     protected Personagem(String sNomeImagePNG, int linha, int coluna) {
         this.pPosicao = new Posicao(1, 1);
@@ -70,12 +70,20 @@ public abstract class Personagem implements Serializable {
         this.meuAtaque = c;
     }
     
-    // <<-- MUDANÇA: Renomeado de autoDesenho()
+     public boolean isVivo() {
+         return bEstaVivo;
+     }
+
+     public void morrer() {
+         // TODO: No futuro, podemos adicionar a lógica de animação de explosão aqui!
+         // Por agora, apenas marcamos para remoção.
+         this.bEstaVivo = false;
+     } 
+
     public void desenhar(){
         Desenho.desenhar(this.iImage, this.pPosicao.getColuna(), this.pPosicao.getLinha());
     }
     
-    // <<-- MUDANÇA: O método atualizar() agora DELEGA para as Estratégias
     /**
      * Atualiza a lógica do personagem delegando para seus comportamentos.
      */

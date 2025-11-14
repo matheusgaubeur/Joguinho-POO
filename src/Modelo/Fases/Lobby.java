@@ -54,6 +54,7 @@ public class Lobby implements IFase {
             fase.add(new Parede("bricks.png", i, 15));
         }
         
+        
         return fase;
     }
 

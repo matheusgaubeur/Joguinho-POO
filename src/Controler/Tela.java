@@ -301,7 +301,11 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                     case "BAU_ABERTO":
                         processarAberturaBau(); // Roda a lógica de sorte/azar
                         break;
-                    // --- FIM DAS NOVAS MECÂNICAS ---
+                        
+                    case "MUNICAO_COLETADA":
+                        getHero().adicionarMunicao(5); // Adiciona 5 balas
+                        this.pontuacao += 5; // Ganha 5 pontos
+                        break;
 
                     // Lógica de Portais (do Lobby)
                     case "PORTAL_FASE_0":
@@ -345,6 +349,16 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             // O desenho ocorre MESMO SE ESTIVER PAUSADO.
             // É isso que permite a Mensagem (bloqueante) aparecer!
             this.cj.desenharTudo(faseAtual);
+            
+            if (!this.isGamePaused) {
+                // Iteramos de trás para frente para remoção segura
+                for (int i = faseAtual.size() - 1; i >= 0; i--) {
+                    Personagem p = faseAtual.get(i);
+                    if (!p.isVivo()) {
+                        faseAtual.remove(i);
+                    }
+                }
+            }
             
         } else if (this.nivelAtual == 6) {
              // LÓGICA DA FASE 6 (Créditos)
@@ -458,6 +472,8 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 getHero().moveLeft();
             } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
                 getHero().moveRight();
+            } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                getHero().atacar();
             } else if (e.getKeyCode() == KeyEvent.VK_S) {
                 File tanque = new File("POO.dat");
                 tanque.createNewFile();
