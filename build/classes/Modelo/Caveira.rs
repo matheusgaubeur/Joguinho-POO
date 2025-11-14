@@ -1,2 +1,0 @@
-Modelo.FabricaFogo
-Modelo.Caveira
