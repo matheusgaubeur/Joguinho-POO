@@ -11,6 +11,8 @@ import java.util.ArrayList;
  * Esta classe é um exemplo de "State Machine" (Máquina de Estados)
  * que usa o Padrão Strategy para trocar seus comportamentos
  * de movimento e ataque dinamicamente.
+ *
+ * VERSÃO MODIFICADA: Alterna entre 2 estados (Perseguir e Atirar).
  */
 public class BossFinal extends Personagem implements Serializable, Mortal {
 
@@ -19,8 +21,9 @@ public class BossFinal extends Personagem implements Serializable, Mortal {
     private int timerComportamento;
     
     // Define quanto tempo cada "fase" (comportamento) do boss dura
-    // (200 ticks * 150ms = 30 segundos por fase)
-    private static final int TEMPO_POR_FASE = 200;
+    // (100 ticks * 150ms = 15 segundos por fase)
+    // <<-- MUDANÇA: Reduzido de 200 para 100 para ficar mais dinâmico
+    private static final int TEMPO_POR_FASE = 100; 
 
     public BossFinal(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
@@ -32,9 +35,10 @@ public class BossFinal extends Personagem implements Serializable, Mortal {
         this.timerComportamento = 0;
 
         // --- Fase 1 (Inicial) ---
-        // Persegue o herói atirando projéteis mirados
+        // <<-- MUDANÇA: Inicia perseguindo o herói, mas sem atacar.
+        // Isso força o boss a se reposicionar antes de atirar.
         setComportamentoMovimento(new MovimentoChaser());
-        setComportamentoAtaque(new AtaqueMirado("fire.png"));
+        setComportamentoAtaque(new AtaqueNulo()); // Fase 1: Apenas persegue
     }
 
     /**
@@ -55,8 +59,8 @@ public class BossFinal extends Personagem implements Serializable, Mortal {
             timerComportamento = 0; // Reseta o timer
             faseAtualDoBoss++;
             
-            // Faz um loop (1 -> 2 -> 3 -> 4 -> 1 ...)
-            if (faseAtualDoBoss > 4) {
+            // <<-- MUDANÇA: Faz um loop (1 -> 2 -> 1 -> 2 ...)
+            if (faseAtualDoBoss > 2) { // Agora só temos 2 fases
                 faseAtualDoBoss = 1;
             }
             
@@ -68,36 +72,30 @@ public class BossFinal extends Personagem implements Serializable, Mortal {
     /**
      * Helper que aplica as novas Estratégias (Ataque/Movimento)
      * baseado na fase atual do Boss.
+     * * <<-- MUDANÇA: Lógica simplificada para apenas 2 fases.
      */
     private void mudarComportamento(int novaFase) {
         System.out.println("BOSS MUDOU PARA A FASE: " + novaFase);
         
         switch (novaFase) {
-            case 1: // Fase Perseguição + Tiro Mirado (Padrão)
+            case 1: // Fase 1: Perseguição (para reposicionamento)
                 setComportamentoMovimento(new MovimentoChaser());
-                setComportamentoAtaque(new AtaqueMirado("fire.png"));
+                setComportamentoAtaque(new AtaqueNulo()); // Só se move, não ataca
                 break;
                 
-            case 2: // Fase Patrulha + Ataque em Cruz
-                setComportamentoMovimento(new MovimentoCircular(5)); // Velocidade 5
-                setComportamentoAtaque(new AtaqueEmCruz("bomba.png"));
-                break;
-                
-            case 3: // Fase "Torreta" + Ataque em V
+            case 2: // Fase 2: Torreta (para ataque focado)
                 setComportamentoMovimento(new MovimentoParado());
-                setComportamentoAtaque(new AtaqueEmV("fire.png"));
+                setComportamentoAtaque(new AtaqueMirado("fire.png")); // Atira mirado
                 break;
                 
-            case 4: // Fase Caótica + Tiro Mirado
-                setComportamentoMovimento(new MovimentoDiagonal(3)); // Velocidade 3 (rápido)
-                setComportamentoAtaque(new AtaqueMirado("bomba.png"));
-                break;
+            // (Fases 3 e 4 removidas para focar no ciclo de 2 estados)
         }
     }
 
     /**
      * Sobrescreve o 'morrer()' de Personagem para implementar a lógica de vida.
      * Este método é chamado pelo 'ProjetilHeroi' quando ele acerta o Boss.
+     * * (Esta função não precisou de mudanças)
      */
     @Override
     public void morrer() {
@@ -118,6 +116,7 @@ public class BossFinal extends Personagem implements Serializable, Mortal {
     /**
      * Cria o Portal de saída no local da morte do Boss
      * e exibe uma mensagem de vitória.
+     * * (Esta função não precisou de mudanças)
      */
     private void triggerFimDeFase() {
         // Pega a posição do Boss
@@ -128,8 +127,6 @@ public class BossFinal extends Personagem implements Serializable, Mortal {
         Portal saida = new Portal("esfera.png", linha, coluna);
         
         // IMPORTANTE: Destino 0 (Lobby).
-        // A Tela.proximaFase() vai ver que viemos da Fase 5
-        // e nos mandar para a Fase 6 (Créditos) automaticamente.
         saida.setDestinoFase(0); 
         
         // Adiciona o portal e a mensagem ao jogo

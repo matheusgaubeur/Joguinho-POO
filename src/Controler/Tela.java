@@ -211,7 +211,7 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     public Hero getHero() {
         if (this.faseAtual.isEmpty() || !(this.faseAtual.get(0) instanceof Hero)) {
             // Isso indica um problema sério no carregamento da fase
-            System.out.println("ERRO: Herói não é o primeiro elemento da fase!");
+            System.out.println("ERRO: Heroi nao e o primeiro elemento da fase!");
             return null; 
             }
         return (Hero) this.faseAtual.get(0);
@@ -307,11 +307,62 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 // PASSO 3: AGIR DE ACORDO COM O STATUS
                 switch (status) {
                     case "HERO_DIED":
-                        this.vidas--;
+                        this.vidas--; // 1. Decrementa a vida
+                        
+                        
+                        
+                        // 3. Limpa a fase e o input
+                        this.faseAtual.clear(); 
+                        this.teclasPressionadas.clear();
+
                         if (this.vidas <= 0) {
-                            this.gameOver();
+                            // --- Lógica de Game Over ---
+                            System.out.println("GAME OVER!");
+                            
+                            // 4. Reseta os stats para um novo jogo
+                            this.vidas = 10;
+                            this.pontuacao = 0;
+                            this.fasesConcluidas.clear();
+                            
+                            // 5. Recarrega o Lobby (Fase 0) PRIMEIRO
+                            this.idFaseAtual = 0;
+                            this.configFaseAtual = gFase.getFase(this.idFaseAtual);
+                            if(this.configFaseAtual != null) { 
+                                this.backgroundTile = this.configFaseAtual.getBackgroundTile();
+                                this.faseAtual.addAll(this.configFaseAtual.carregarPersonagensIniciais());
+                            }
+                            
+                            // 6. Reseta o Herói do Lobby (que agora está no índice 0)
+                            Hero heroiNovoLobby = getHero();
+                            if (heroiNovoLobby != null) {
+                                heroiNovoLobby.setMunicao(5);
+                                heroiNovoLobby.setChaves(0);
+                            }
+
+                            // 7. Adiciona a mensagem de Game Over POR ÚLTIMO
+                            addPersonagem(new Mensagem("GAME OVER", true)); 
+                            
                         } else {
-                            this.reiniciarFase();
+                            // --- Lógica de Perder Vida (mas não Game Over) ---
+                            System.out.println("Voce morreu! Vidas restantes: " + this.vidas);
+
+                            // 4. Recarrega a fase ATUAL PRIMEIRO
+                            this.configFaseAtual = gFase.getFase(this.idFaseAtual);
+                            if(this.configFaseAtual != null) { 
+                                this.backgroundTile = this.configFaseAtual.getBackgroundTile();
+                                this.faseAtual.addAll(this.configFaseAtual.carregarPersonagensIniciais());
+                            }
+                            
+                            // 5. Restaura o estado do Herói (que agora está no índice 0)
+                            Hero heroiNovoFase = getHero();
+                            if (heroiNovoFase != null) {
+                                heroiNovoFase.setMunicao(5); // <<-- CORREÇÃO (Valor padrão)
+                                heroiNovoFase.setChaves(0);  // <<-- CORREÇÃO (Valor padrão)
+                            }
+                            
+                            // 6. Adiciona a mensagem de Morte POR ÚLTIMO
+                            String msg = "Você morreu!\nVidas restantes: " + this.vidas;
+                            addPersonagem(new Mensagem(msg, true)); 
                         }
                         break;
                         

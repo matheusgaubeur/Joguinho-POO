@@ -41,7 +41,7 @@ public class Hero extends Personagem implements Serializable{
     // ADICIONE ESTES DOIS NOVOS MÉTODOS
     public void adicionarMunicao(int quantidade) {
         this.nMunicao += quantidade;
-        System.out.println("Munição coletada! Total: " + this.nMunicao);
+        System.out.println("Municaoo coletada! Total: " + this.nMunicao);
     }
     
     /**
@@ -60,12 +60,12 @@ public class Hero extends Personagem implements Serializable{
     
     public void atacar() {
         if (nMunicao <= 0) {
-            System.out.println("Sem munição!");
+            System.out.println("Sem municao!");
             return; // Não pode atirar
         }
         
         this.nMunicao--;
-        System.out.println("Tiro! Munição restante: " + this.nMunicao);
+        System.out.println("Tiro! Municao restante: " + this.nMunicao);
         
         // ESTA É A LINHA CORRIGIDA (Erro 2)
         Posicao p = new Posicao(this.getPosicao().getLinha(), this.getPosicao().getColuna());

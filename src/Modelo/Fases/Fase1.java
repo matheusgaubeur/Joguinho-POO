@@ -144,11 +144,11 @@ public class Fase1 implements IFase {
     
     @Override
     public String getMensagemInicial() {
-        return "ÁGUA EM ABUNDANCIA!\nHerói, tome cuidado com os Peixes,\nPinguins e a BALEIA!!!";
+        return  "QUE FRIIIIO!\nHerói, tome cuidado com os pinguins,\nmorsas e URSOS!";
     }
     
     @Override
     public String getMensagemVitoria() {
-        return "Você superou a inundação!\nFase da Água concluída!";
+        return  "Você superou a neve o gelo e encontrou os artefatos!\nFase concluída!";
     }
 }

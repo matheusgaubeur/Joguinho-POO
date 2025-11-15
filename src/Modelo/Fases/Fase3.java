@@ -96,13 +96,13 @@ public class Fase3 implements IFase {
 // Adicione este método dentro da classe Fase3.java
     @Override
     public String getMensagemInicial() {
-        return "TERRAS PANTANOSAS!\nCuidado com os Jacarés e... Mosquitos?";
+        return "QUE LUGAR BIZARRO!!\nCuidado com as criaturas do pântano!";
     }
     
     @Override
     public String getMensagemVitoria() {
         // Esta é a mensagem que você sugeriu!
-        return "Parabéns, héroi!\nVocê conseguiu vencer o pântano!";
+        return "Parabéns, héroi!\nVocê escapou do pântano!";
     }
     
     

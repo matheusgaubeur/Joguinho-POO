@@ -48,7 +48,7 @@ public class Fase5 implements IFase {
     
     @Override
     public String getMensagemInicial() {
-        return "FASE FINAL!\n\nDerrote o Guardião!";
+        return "FASE FINAL!\n\nDerrote o chefe!";
     }
     
     @Override

@@ -101,12 +101,12 @@ public class Fase4 implements IFase {
     // Adicione este método dentro da classe Fase3.java
     @Override
     public String getMensagemInicial() {
-        return "Chuvas e Raios!\nCuidado com os Raios, drones e... Robôs?";
+        return "Quem apagou a luz? \nNão consigo ver nada nessa caverna escura!";
     }
     
     @Override
     public String getMensagemVitoria() {
         // Esta é a mensagem que você sugeriu!
-        return "Parabéns, héroi!\nVocê conseguiu vencer os raios e robôs!";
+        return "Ufa! Finalmente um pouco de luz!\nVocê escapou da caverna!";
     }
 }
