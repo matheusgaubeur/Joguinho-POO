@@ -44,6 +44,20 @@ public class Hero extends Personagem implements Serializable{
         System.out.println("Munição coletada! Total: " + this.nMunicao);
     }
     
+    /**
+     * Define a contagem de munição (usado ao trocar de fase).
+     */
+    public void setMunicao(int nMunicao) {
+        this.nMunicao = nMunicao;
+    }
+
+    /**
+     * Define a contagem de chaves (usado ao trocar de fase).
+     */
+    public void setChaves(int numChaves) {
+        this.numChaves = numChaves;
+    }
+    
     public void atacar() {
         if (nMunicao <= 0) {
             System.out.println("Sem munição!");
@@ -137,5 +151,21 @@ public class Hero extends Personagem implements Serializable{
         } catch (java.io.IOException ex) {
             System.out.println(ex.getMessage());
         }
+    }
+    
+    /**
+     * Permite que o HUD leia a quantidade de chaves.
+     * @return O número atual de chaves.
+     */
+    public int getNumChaves() {
+        return this.numChaves;
+    }
+    
+    /**
+     * Permite que o HUD leia a quantidade de munição.
+     * @return O número atual de munições.
+     */
+    public int getNumMunicao() {
+        return this.nMunicao;
     }
 }

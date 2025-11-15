@@ -26,8 +26,5 @@ public class Caveira extends Personagem implements Serializable {
         );
     }
     
-    // <<-- MUDANÇA: Não precisa mais do 'atualizar()' ou 'desenhar()',
-    // a lógica foi movida para a Estratégia!
-    
-    // <<-- MUDANÇA: O 'criarProjetil()' foi movido para sua própria fábrica.
+
 }

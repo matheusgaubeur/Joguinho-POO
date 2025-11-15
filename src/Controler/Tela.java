@@ -118,11 +118,13 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         // NOVO: Carrega a imagem do coração para o HUD
         try {
             iCoracaoHUD = new javax.swing.ImageIcon(new java.io.File(".").getCanonicalPath() + Consts.PATH + "coracao.png");
-            // Redimensiona o ícone do HUD para um tamanho bom (ex: 25x25)
+            // NOVO: Define o tamanho do ícone do HUD (ex: metade de uma célula)
+            int tamanhoIcone = Consts.CELL_SIDE / 2; 
+            
             java.awt.Image img = iCoracaoHUD.getImage();
-            java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(25, 25, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(tamanhoIcone, tamanhoIcone, java.awt.image.BufferedImage.TYPE_INT_ARGB);
             java.awt.Graphics g = bi.createGraphics();
-            g.drawImage(img, 0, 0, 25, 25, null);
+            g.drawImage(img, 0, 0, tamanhoIcone, tamanhoIcone, null);
             iCoracaoHUD = new javax.swing.ImageIcon(bi);
         } catch (java.io.IOException ex) {
             System.out.println("Erro ao carregar imagem do HUD: " + ex.getMessage());
@@ -135,6 +137,17 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
      * @param idFase O número da fase a ser carregada.
      */
     public void iniciarFase(int idFase) {
+        
+        // 1. Pega o estado do Herói *antes* de limpar a fase
+        Hero heroiAntigo = getHero();
+        int municaoCache = 5; // Valor padrão se não houver Herói
+        int chavesCache = 0;   // Valor padrão
+
+        if (heroiAntigo != null) {
+            municaoCache = heroiAntigo.getNumMunicao();
+            chavesCache = heroiAntigo.getNumChaves();
+        }
+        
         // Limpa a fase antiga
         this.faseAtual.clear();
         this.teclasPressionadas.clear();
@@ -156,6 +169,14 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         // Carrega os personagens da nova fase
         this.faseAtual.addAll(this.configFaseAtual.carregarPersonagensIniciais());
 
+        // 2. Pega o *novo* Herói e injeta o estado salvo
+        Hero heroiNovo = getHero();
+        if (heroiNovo != null) {
+            heroiNovo.setMunicao(municaoCache);
+            heroiNovo.setChaves(chavesCache);
+        }
+        
+        
         // Define o background
         this.backgroundTile = this.configFaseAtual.getBackgroundTile();
 
@@ -175,6 +196,12 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         else {
             // Apenas mostre a mensagem INICIAL da fase ATUAL.
             msgParaMostrar = this.configFaseAtual.getMensagemInicial();
+        }
+        if (this.configFaseAtual instanceof Modelo.Fases.CreditosFinais) {
+            String msgAutores = this.configFaseAtual.getMensagemVitoria();
+            if (msgAutores != null && !msgAutores.isEmpty()) {
+                msgParaMostrar = msgParaMostrar + "\n\n" + msgAutores;
+            }
         }
 
 //
@@ -388,6 +415,9 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         // NOVO: Desenhando o HUD (Vidas e Pontos)
         // ==========================================================
         // Define a fonte e a cor
+        // --- LINHA 1: Vidas e Pontuação ---
+        
+        // Define a fonte e a cor
         g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 20));
         g2.setColor(java.awt.Color.WHITE);
 
@@ -397,10 +427,32 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
         // Desenha as Vidas (no canto superior esquerdo)
         if (iCoracaoHUD != null) {
+            // Pega o tamanho do ícone que definimos no construtor
+            int tamanhoIcone = iCoracaoHUD.getIconWidth();
+            int espacamento = 5; // Espaço entre os corações
+            
             for (int i = 0; i < this.vidas; i++) {
                 // Desenha um coração para cada vida, com espaçamento
-                iCoracaoHUD.paintIcon(this, g2, 10 + (i * 30), 5);
+                iCoracaoHUD.paintIcon(this, g2, 10 + (i * (tamanhoIcone + espacamento)), 5);
             }
+        }
+        
+        // --- LINHA 2: Chaves e Munição ---
+        
+        // Vamos precisar do Herói para pegar os dados
+        Hero h = getHero();
+        if (h != null) {
+            // Posição Y da segunda linha (ex: 30 pixels abaixo da primeira)
+            int yLinha2 = 55; 
+            
+            // Desenha as Chaves (lado esquerdo)
+            // (Poderíamos carregar um ícone de chave, mas por ora texto é mais rápido)
+            String textoChaves = "Chaves: " + h.getNumChaves();
+            g2.drawString(textoChaves, 10, yLinha2);
+
+            // Desenha a Munição (lado direito)
+            String textoMunicao = "Munição: " + h.getNumMunicao();
+            g2.drawString(textoMunicao, 430, yLinha2);
         }
         // ==========================================================
         // FIM DO HUD
@@ -496,16 +548,49 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                 getHero().atacar();
             } else if (e.getKeyCode() == KeyEvent.VK_S) {
-                File tanque = new File("POO.dat");
-                tanque.createNewFile();
-                FileOutputStream canoOut = new FileOutputStream(tanque);
-                ObjectOutputStream serializador = new ObjectOutputStream(canoOut);
-                serializador.writeObject(faseAtual);
+                // --- CORREÇÃO SAVE ---
+                // 1. Cria o objeto de estado
+                SaveState save = new SaveState();
+                save.faseAtual = this.faseAtual;
+                save.idFaseAtual = this.idFaseAtual;
+                save.vidas = this.vidas;
+                save.pontuacao = this.pontuacao;
+                save.itensColetados = this.itensColetados;
+                save.fasesConcluidas = this.fasesConcluidas;
+                save.backgroundTile = this.backgroundTile; // Salva o background
+
+                // 2. Serializa o objeto de estado
+                try (FileOutputStream fos = new FileOutputStream("POO.dat");
+                     ObjectOutputStream serializador = new ObjectOutputStream(fos)) {
+                    serializador.writeObject(save);
+                    System.out.println("Jogo Salvo!");
+                } catch (IOException ex) {
+                    System.err.println("Erro ao salvar: " + ex.getMessage());
+                }
             } else if (e.getKeyCode() == KeyEvent.VK_L) {
-                File tanque = new File("POO.dat");
-                FileInputStream canoOut = new FileInputStream(tanque);
-                ObjectInputStream serializador = new ObjectInputStream(canoOut);
-                faseAtual = (ArrayList<Personagem>)serializador.readObject();
+                try (FileInputStream fis = new FileInputStream("POO.dat");
+                     ObjectInputStream serializador = new ObjectInputStream(fis)) {
+                    
+                    // 1. Lê o objeto de estado
+                    SaveState save = (SaveState) serializador.readObject();
+
+                    // 2. Restaura TUDO
+                    this.faseAtual = save.faseAtual;
+                    this.idFaseAtual = save.idFaseAtual;
+                    this.vidas = save.vidas;
+                    this.pontuacao = save.pontuacao;
+                    this.itensColetados = save.itensColetados;
+                    this.fasesConcluidas = save.fasesConcluidas;
+                    this.backgroundTile = save.backgroundTile; // Restaura o background
+
+                    // 3. Atualiza a config da fase (importante!)
+                    this.configFaseAtual = gFase.getFase(this.idFaseAtual);
+                    
+                    System.out.println("Jogo Carregado!");
+                    
+                } catch (Exception ex) {
+                    System.err.println("Erro ao carregar: " + ex.getMessage());
+                }
             } else if (e.getKeyCode() == KeyEvent.VK_K) {
                 // CHEAT: Salva uma Caveira para teste de Drag-and-Drop
                 try (   FileOutputStream fos = new FileOutputStream("caveira.gz");
@@ -647,9 +732,9 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         int sorte = rand.nextInt(100); // Sorteia um número de 0 a 99
 
         if (sorte < 20) { // 20% de chance
-            // Recompensa Máxima: Pular a Fase!
-            addPersonagem(new Mensagem("Um Gerador de Portal!\nVocê escapou da fase!", true));
-            this.proximaFase(); // Usa a lógica que já temos!
+            // Recompensa: Ganhar munição
+            getHero().adicionarMunicao(10); // Usa o método que já existe no Hero
+            addPersonagem(new Mensagem("Um Pente de Balas!\nVocê ganhou 10 munições!", true));
 
         } else if (sorte < 60) { // 40% de chance (de 20 a 59)
             // Recompensa Ótima: Vida Extra!
@@ -814,6 +899,26 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     public void keyTyped(KeyEvent e) {
     }
 
+    /**
+     * Classe interna que agrupa todos os dados
+     * necessários para um Save/Load completo.
+     * Ela precisa ser Serializable.
+     */
+    private static class SaveState implements java.io.Serializable {
+        // Precisamos salvar TUDO que define o estado do jogo
+        
+        public ArrayList<Personagem> faseAtual;
+        public int idFaseAtual;
+        public int vidas;
+        public int pontuacao;
+        public int itensColetados;
+        public java.util.Set<Integer> fasesConcluidas;
+        
+        // Adicionado para corrigir o bug do background
+        public String backgroundTile; 
+    }
+    
+    
     // ---------------------------------------------------------------- //
     // MÉTODOS DO REQUISITO 6 (DRAG-AND-DROP)
     // ---------------------------------------------------------------- //
@@ -985,4 +1090,9 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             this.heroMoveCooldown--;
         }
     }
+    
+    
+    
+    
+    
 }

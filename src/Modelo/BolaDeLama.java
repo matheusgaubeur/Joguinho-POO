@@ -4,16 +4,14 @@ import java.io.Serializable;
 
 /**
  * Projétil do Jacaré (Fase 3).
- * Herda de Projetil e implementa o movimento para ESQUERDA.
+ * Herda de ProjetilEsquerda para obter seu movimento.
  */
-public class BolaDeLama extends Projetil implements Serializable {
+// MUDANÇA: extends Projetil -> extends ProjetilEsquerda
+public class BolaDeLama extends ProjetilEsquerda implements Serializable {
             
     public BolaDeLama(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
     }
 
-    @Override
-    public boolean move() {
-        return this.moveLeft(); // Lógica de movimento da Bola de Lama
-    }
+    // O MÉTODO move() FOI APAGADO, pois é herdado de ProjetilEsquerda
 }
