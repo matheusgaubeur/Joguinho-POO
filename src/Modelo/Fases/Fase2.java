@@ -2,62 +2,77 @@ package Modelo.Fases;
 
 import Modelo.*;
 import java.util.ArrayList;
+// --- NOSSOS NOVOS IMPORTS ---
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+// --- FIM DOS NOVOS IMPORTS ---
 
 /**
  * Implementação da IFase para o Nível 2 (Fogo e Pedra).
- * Preenche o "casca" com a lógica de jogo do brainstorm.
+ * O layout inicial é carregado de um arquivo serializado.
+ * A lógica de 3 estágios permanece no código.
  */
 public class Fase2 implements IFase {
 
+    /**
+     * MÉTODO REATORADO:
+     * Carrega o layout inicial da fase (paredes, herói, inimigos)
+     * a partir de um arquivo .dat serializado.
+     */
     @Override
     public ArrayList<Personagem> carregarPersonagensIniciais() {
-        ArrayList<Personagem> fase = new ArrayList<>();
-        
-        // 1. Adiciona o Herói
-        fase.add(new Hero(getHeroSkin(), 1, 1)); // Canto superior esquerdo
-        
-        // 2. Adiciona o PRIMEIRO Item-Chave (usando "coracao.png" como placeholder)
-        fase.add(new ItemChave("coracao.png", 1, 14)); // Canto superior direito // <<-- MUDANÇA (Apenas o primeiro)
-        //fase.add(new ItemChave("coracao.png", 14, 1)); // Canto inferior esquerdo // <<-- MUDANÇA (Movido para Coleta_1)
-        //fase.add(new ItemChave("coracao.png", 14, 14)); // Canto inferior direito // <<-- MUDANÇA (Movido para Coleta_2)
-        
-        // 3. Adiciona Inimigos Iniciais
-        fase.add(new Vulcao("caveira.png", 7, 7)); // Centro do mapa
-        
-        // <<-- MUDANÇA: Adiciona inimigo de patrulha da Fase 2 (InimigoDiagonal)
-        // (Usando "roboPink.png" como placeholder)
-        fase.add(new InimigoDiagonal("roboPink.png", 10, 3));
-
-        // 4. Adiciona Paredes do Mapa (Bordas)
-        // (Usando "bricks.png" como placeholder de "parede_pedra.png")
-        for (int i = 0; i < 16; i++) {
-            fase.add(new Parede("bricks.png", 0, i)); // Borda Superior
-            fase.add(new Parede("bricks.png", 15, i)); // Borda Inferior
-        }
-        for (int i = 1; i < 15; i++) {
-            fase.add(new Parede("bricks.png", i, 0)); // Borda Esquerda
-            fase.add(new Parede("bricks.png", i, 15)); // Borda Direita
-        }
-        
-        return fase;
+        // Simplesmente chama nosso método auxiliar para carregar o arquivo
+        return carregarFaseDeArquivo("fase2_layout.dat");
     }
 
+    /**
+     * NOVO MÉTODO AUXILIAR:
+     * Lê um ArrayList<Personagem> de um arquivo.
+     * @param nomeArquivo O nome do arquivo (ex: "fase2_layout.dat")
+     * @return O ArrayList de Personagens.
+     */
+    private ArrayList<Personagem> carregarFaseDeArquivo(String nomeArquivo) {
+        try (FileInputStream fis = new FileInputStream(nomeArquivo);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            
+            ArrayList<Personagem> fase = (ArrayList<Personagem>) ois.readObject();
+            
+            // Ajuste CRUCIAL: A imagem (ImageIcon) não é serializada corretamente.
+            // Devemos "resetar" a skin do herói (que é o índice 0)
+            // usando a skin definida nesta classe de fase.
+            if (fase.get(0) instanceof Hero) {
+                // getHeroSkin() é um método que já existe nesta classe
+                ((Hero) fase.get(0)).setSkin(getHeroSkin()); 
+            }
+            
+            return fase;
+            
+        } catch (Exception e) {
+            System.err.println("FALHA AO CARREGAR ARQUIVO DE FASE: " + nomeArquivo + " - " + e.getMessage());
+            // Se falhar, retorna uma fase vazia para não quebrar o jogo
+            return new ArrayList<>(); 
+        }
+    }
+
+    // =================================================================
+    // LÓGICA DE 3 ESTÁGIOS (INTOCADA)
+    // O editor de fases NÃO mexe nisso. Isso é a lógica do jogo.
+    // (Este código é o mesmo que já estava no seu Fase2.java)
+    // =================================================================
+    
     @Override
     public ArrayList<Personagem> getPersonagensColeta_1() {
         // "barreiras físicas surgem no mapa"
         ArrayList<Personagem> barreiras = new ArrayList<>();
         
-        // Cria uma barreira vertical no meio
-        // (Usando "bricks.png" como placeholder)
         for(int i = 1; i < 15; i++) {
-             // Deixa uma passagem no meio (onde o vulcão está)
              if (i != 7 && i != 8) {
                 barreiras.add(new Parede("Agua.png", i, 10));
              }
         }
         
         // Adiciona o SEGUNDO ItemChave
-        barreiras.add(new ItemChave("coracao.png", 14, 1)); // <<-- MUDANÇA (Item 2)
+        barreiras.add(new ItemChave("coracao.png", 14, 1)); //
         
         return barreiras;
     }
@@ -67,11 +82,10 @@ public class Fase2 implements IFase {
         // "o inimigo que segue o herói surge"
         ArrayList<Personagem> chefao = new ArrayList<>();
         
-        // (Usando Chaser com skin "chaser.png" como placeholder)
-        chefao.add(new Chaser("chaser.png", 13, 2));
+        chefao.add(new Chaser("chaser.png", 13, 2)); //
         
         // Adiciona o TERCEIRO ItemChave
-        chefao.add(new ItemChave("coracao.png", 14, 14)); // <<-- MUDANÇA (Item 3)
+        chefao.add(new ItemChave("coracao.png", 14, 14)); //
         
         return chefao;
     }
@@ -79,32 +93,33 @@ public class Fase2 implements IFase {
     @Override
     public Personagem getPersonagemColeta_3() {
         // "sair por um portal"
-        // (Usando "esfera.png" como placeholder)
-        Portal saida = new Portal("esfera.png", 7, 13);
-        saida.setDestinoFase(0); // Destino 0 = Volta para o Lobby
+        Portal saida = new Portal("esfera.png", 7, 13); //
+        saida.setDestinoFase(0); 
         return saida;
     }
 
+    // =================================================================
+    // MÉTODOS DE CONFIGURAÇÃO (INTOCADOS)
+    // Ainda precisamos deles para o getHeroSkin() e o fundo.
+    // =================================================================
+
     @Override
     public String getBackgroundTile() {
-        // Placeholder, precisamos de um "chão de pedra/lava"
-        return "bricks.png";
+        return "blackTile.png"; //
     }
 
     @Override
     public String getHeroSkin() {
-        // Placeholder "Armadura de Ouro"
-        return "robo.png";
+        return "robo.png"; //
     }
     
     @Override
     public String getMensagemInicial() {
-        return "FOGO, MUITO FOGOO...!\n\nHerói, tome cuidade para não se queimar.\n\nSobreviva!";
+        return "FOGO, MUITO FOGOO...!\n\nHerói, tome cuidade para não se queimar.\n\nSobreviva!"; //
     }
     
     @Override
     public String getMensagemVitoria() {
-        // Esta é a mensagem que você sugeriu!
-        return "Parabéns, héroi!\nVocê conseguiu vencer o calor!";
+        return "Parabéns, héroi!\nVocê conseguiu vencer o calor!"; //
     }
 }

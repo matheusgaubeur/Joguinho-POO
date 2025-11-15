@@ -54,6 +54,7 @@ import java.util.zip.GZIPOutputStream;
 import Modelo.Fases.IFase;
 import Modelo.InimigoCircular;
 import Modelo.InimigoDiagonal;
+import Modelo.Jacare;
 import Modelo.Portal;
 import Modelo.ItemChave;
 import Modelo.Mensagem;
@@ -61,6 +62,12 @@ import Modelo.RoboAtirador;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.util.Random;
+import Modelo.Parede; // <-- Importante
+import Modelo.Bau; // <-- Importante
+import Modelo.Chave; // <-- Importante
+import Modelo.Portal; // <-- Importante
+import Modelo.ItemChave; // <-- Importante
+import javax.swing.SwingUtilities;
 
 public class Tela extends javax.swing.JFrame implements MouseListener, KeyListener, DropTargetListener {
 
@@ -486,19 +493,54 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 ObjectInputStream serializador = new ObjectInputStream(canoOut);
                 faseAtual = (ArrayList<Personagem>)serializador.readObject();
             } else if (e.getKeyCode() == KeyEvent.VK_K) {
-            // CHEAT: Salva uma Caveira para teste de Drag-and-Drop
-            try (   FileOutputStream fos = new FileOutputStream("caveira.gz");
-                    GZIPOutputStream gzos = new GZIPOutputStream(fos);
-                    ObjectOutputStream oos = new ObjectOutputStream(gzos)) {
+                // CHEAT: Salva uma Caveira para teste de Drag-and-Drop
+                try (   FileOutputStream fos = new FileOutputStream("caveira.gz");
+                        GZIPOutputStream gzos = new GZIPOutputStream(fos);
+                        ObjectOutputStream oos = new ObjectOutputStream(gzos)) {
 
-                Caveira c = new Caveira("caveira.png", 0, 0); // Posição não importa
-                oos.writeObject(c);
-                System.out.println("Arquivo 'caveira.gz' criado para teste!");
+                    Caveira c = new Caveira("caveira.png", 0, 0); // Posição não importa
+                    oos.writeObject(c);
+                    System.out.println("Arquivo 'caveira.gz' criado para teste!");
 
-            } catch (Exception ex) {
-                System.err.println("Erro ao criar arquivo de teste: " + ex.getMessage());
+                } catch (Exception ex) {
+                    System.err.println("Erro ao criar arquivo de teste: " + ex.getMessage());
+                }
             }
-        }
+            else if (e.getKeyCode() == KeyEvent.VK_1) {
+                salvarPincelGZ(new Parede("ParedePedra.png", 0, 0), "pincel_parede");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_2) {
+                salvarPincelGZ(new ZigueZague("robo.png", 0, 0), "pincel_ziguezague");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_3) {
+                salvarPincelGZ(new Jacare("chaser.png", 0, 0), "pincel_chaser");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_4) {
+                // Atirador (Caveira) - AGORA COMPATÍVEL!
+                salvarPincelGZ(new Caveira("Capivara.png", 0, 0), "pincel_caveira");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_5) {
+                // Item Coletável (o "coração")
+                salvarPincelGZ(new ItemChave("coracao.png", 0, 0), "pincel_itemchave");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_6) {
+                // Portal (ex: para Fase 1)
+                Portal p = new Portal("esfera.png", 0, 0);
+                p.setDestinoFase(1); // Importante: configuramos o estado dele
+                salvarPincelGZ(p, "pincel_portal_fase1");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_7) {
+                // Chave (para baú/porta)
+                salvarPincelGZ(new Chave("coracao.png", 0, 0), "pincel_chave");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_8) {
+                // Baú
+                salvarPincelGZ(new Bau("roboPink.png", 0, 0), "pincel_bau");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_9) {
+                // Herói (para definir a posição inicial)
+                salvarPincelGZ(new Hero("Hero.png", 0, 0), "pincel_hero");
+            }
 
             this.atualizaCamera();
             this.setTitle("-> Cell: " + (getHero().getPosicao().getLinha()) + ", " + (getHero().getPosicao().getColuna()));
@@ -512,26 +554,55 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         teclasPressionadas.remove(e.getKeyCode());        
     }    
 
+    @Override
     public void mousePressed(MouseEvent e) {
         if (this.isGamePaused) {
             return; // Ignora clique do mouse se o jogo estiver pausado
         }
         
-        
-        /* Clique do mouse desligado*/
+        // Calcula a posição no *GRID* (levando em conta a câmera)
         int x = e.getX();
         int y = e.getY();
-
-        this.setTitle("X: " + x + ", Y: " + y
-                + " -> Cell: " + (y / Consts.CELL_SIDE) + ", " + (x / Consts.CELL_SIDE));
-
-        // Calcula a posição no *GRID* (levando em conta a câmera)
         int dropLinha = (y / Consts.CELL_SIDE) + getCameraLinha();
         int dropColuna = (x / Consts.CELL_SIDE) + getCameraColuna();
 
-        this.getHero().getPosicao().setPosicao(dropLinha, dropColuna);
+        // --- LÓGICA DO EDITOR (Adicionada) ---
 
-        repaint();
+        // BOTÃO DIREITO: Remover Personagem (Nossa "Borracha")
+        if (SwingUtilities.isRightMouseButton(e)) {
+            // Itera de trás para frente para remoção segura
+            for (int i = faseAtual.size() - 1; i >= 0; i--) {
+                Personagem p = faseAtual.get(i);
+
+                // Verifica se a posição do personagem é a mesma do clique
+                if (p.getPosicao().getLinha() == dropLinha && p.getPosicao().getColuna() == dropColuna) {
+                    
+                    // REGRA DE SEGURANÇA: Nunca remova o Herói!
+                    // (Lembramos que o Herói é sempre o índice 0)
+                    if (i == 0) {
+                        System.out.println("Editor: Nao e possivel remover o Heroi!");
+                        continue; // Procura se há algo *embaixo* do herói
+                    }
+                    
+                    // Remove o personagem da lista
+                    faseAtual.remove(i);
+                    System.out.println("Editor: Item removido em " + dropLinha + "," + dropColuna);
+                    repaint(); // Atualiza a tela imediatamente
+                    return; // Sai do método (remove apenas 1 item por clique)
+                }
+            }
+        } 
+        
+        // BOTÃO ESQUERDO: Teleportar Herói (Modo "Cheat" que você já tinha)
+        else if (SwingUtilities.isLeftMouseButton(e)) {
+            this.setTitle("X: " + x + ", Y: " + y
+                    + " -> Cell: " + (y / Consts.CELL_SIDE) + ", " + (x / Consts.CELL_SIDE));
+            
+            // Sua lógica original de teleporte
+            this.getHero().getPosicao().setPosicao(dropLinha, dropColuna);
+            
+            repaint();
+        }
     }
     
     /**
@@ -794,4 +865,23 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     // ---------------------------------------------------------------- //
     // FIM DOS MÉTODOS DE DRAG-AND-DROP
     // ---------------------------------------------------------------- //
+    
+    /**
+     * Método auxiliar para criar um "pincel" serializado .gz de um personagem.
+     * @param p O Personagem (ex: new Parede(...))
+     * @param nomeArquivo O nome do arquivo (sem a extensão .gz)
+     */
+    private void salvarPincelGZ(Personagem p, String nomeArquivo) {
+        // Usamos try-with-resources para fechar os streams automaticamente
+        try (FileOutputStream fos = new FileOutputStream(nomeArquivo + ".gz");
+             GZIPOutputStream gzos = new GZIPOutputStream(fos);
+             ObjectOutputStream oos = new ObjectOutputStream(gzos)) {
+            
+            oos.writeObject(p); // Serializa o objeto
+            System.out.println(">>> PINCEL CRIADO: " + nomeArquivo + ".gz");
+
+        } catch (Exception ex) {
+            System.err.println("Erro ao criar pincel: " + ex.getMessage());
+        }
+    }
 }
