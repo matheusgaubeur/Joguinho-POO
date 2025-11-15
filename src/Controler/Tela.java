@@ -158,6 +158,7 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
         // Carrega a nova configuração de fase
         this.configFaseAtual = gFase.getFase(this.idFaseAtual);
+        // PODE REMOVER ISSO
         if (this.configFaseAtual instanceof Modelo.Fases.Lobby) {
             ((Modelo.Fases.Lobby) this.configFaseAtual).atualizarFasesConcluidas(this.fasesConcluidas);
         }
@@ -197,27 +198,14 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             // Apenas mostre a mensagem INICIAL da fase ATUAL.
             msgParaMostrar = this.configFaseAtual.getMensagemInicial();
         }
-        if (this.configFaseAtual instanceof Modelo.Fases.CreditosFinais) {
-            String msgAutores = this.configFaseAtual.getMensagemVitoria();
-            if (msgAutores != null && !msgAutores.isEmpty()) {
-                msgParaMostrar = msgParaMostrar + "\n\n" + msgAutores;
-            }
-        }
-
-//
-        // CASO 3: Se a fase que acabamos de carregar for a de Créditos,
-        // precisamos anexar a mensagem de "vitória" (os autores) à
-        // mensagem "inicial" (o "FIM DE JOGO!").
-        if (this.configFaseAtual instanceof Modelo.Fases.CreditosFinais) {
-            String msgAutores = this.configFaseAtual.getMensagemVitoria();
-            if (msgAutores != null && !msgAutores.isEmpty()) {
-                // Concatena as duas mensagens
-                msgParaMostrar = msgParaMostrar + "\n\n" + msgAutores;
-            }
-        }
 
         // Reseta a pontuação de coleta (lógica dos 3 itens)
         this.itensColetados = 0;
+        
+        if (msgParaMostrar != null && !msgParaMostrar.isEmpty()) {
+            // O "true" garante que a mensagem pause o jogo (blocking)
+            this.addPersonagem(new Mensagem(msgParaMostrar, true));
+        }
     }
     
     public Hero getHero() {
@@ -378,9 +366,6 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                         // Não faz nada, o jogo continua
                         break;
                 } // Fim do switch(status)
-                if (this.idFaseAtual == 5) {
-                    processarFase5();
-                }
                 
             } // <--- Fim do "if (!this.isGamePaused)"
             // -----------------------------------------------------------------
@@ -402,14 +387,8 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                     }
                 }
             }
-            
-        } else if (this.nivelAtual == 6) {
-             // LÓGICA DA FASE 6 (Créditos)
-             g2.setColor(java.awt.Color.WHITE);
-             g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 18));
-             g2.drawString("PARABENS, VOCE ZEROU O JOGO!", 180, 200);
-             g2.drawString("Criado por: [Seu Nome Aqui] e [Nome Colega 1]", 180, 250);
-        }
+        }  
+
         
         // ==========================================================
         // NOVO: Desenhando o HUD (Vidas e Pontos)
@@ -774,9 +753,7 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             System.out.println("Fases Concluidas: " + this.fasesConcluidas.toString());
             this.iniciarFase(0);
         } 
-        else if (this.idFaseAtual == 5) { // <-- MUDOU
-            this.iniciarFase(6);
-        }
+
         // Outros casos (Lobby 0, Créditos 6) reiniciam o jogo
         else {
             this.iniciarFase(0); 
@@ -792,65 +769,7 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         this.iniciarFase(0);
     }
     
-/**
-     * NOVO MÉTODO: (VERSÃO TURBINADA)
-     * Controla a lógica da Fase 5 (Sobrevivência).
-     */
-    private void processarFase5() {
-        this.faseTimer++;
-        this.spawnTimer++;
 
-        // 1 minuto = 400 ticks (400 * 150ms = 60000ms)
-        if (this.faseTimer > 400) {
-            this.iniciarFase(6); // 6 é CreditosFinais
-            return;
-        }
-
-        // --- LÓGICA DE DIFICULDADE PROGRESSIVA ---
-        int spawnMaxTicks = 20; // Padrão: 3 segundos
-        if (this.faseTimer > 200) { // Na metade do tempo (30s)
-            spawnMaxTicks = 10; // Dobra a velocidade de spawn! (1.5s)
-        }
-        // --- FIM DA LÓGICA ---
-
-        if (this.spawnTimer > spawnMaxTicks) {
-            this.spawnTimer = 0; // Reseta o timer de spawn
-            
-            java.util.Random rand = new java.util.Random();
-            int tipoInimigo = rand.nextInt(5); // AGORA SPAWNA 5 TIPOS!
-            int linha = rand.nextInt(14) + 1; // Posição aleatória (evitando bordas)
-            int coluna = rand.nextInt(14) + 1;
-            
-            // Evita spawnar em cima das paredes internas da Fase 5
-            if((linha == 4 || linha == 11) && (coluna >= 4 && coluna <= 11)){
-                linha = 7; // Joga pro meio se cair na parede
-                coluna = 7;
-            }
-
-            switch(tipoInimigo) {
-                case 0:
-                    // O Perseguidor (Clássico)
-                    this.addPersonagem(new Chaser("chaser.png", linha, coluna));
-                    break;
-                case 1:
-                    // O Atirador de Bombas! (Mais perigoso que a Caveira)
-                    this.addPersonagem(new RoboAtirador("robo.png", linha, coluna));
-                    break;
-                case 2:
-                    // O Caótico ZigueZague
-                    this.addPersonagem(new ZigueZague("skoot.png", linha, coluna));
-                    break;
-                case 3:
-                    // O Patrulha Circular
-                    this.addPersonagem(new InimigoCircular("roboPink.png", linha, coluna));
-                    break;
-                case 4:
-                    // O Patrulha Diagonal
-                    this.addPersonagem(new InimigoDiagonal("roboPink.png", linha, coluna));
-                    break;
-            }
-        }
-    }
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -1090,9 +1009,5 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             this.heroMoveCooldown--;
         }
     }
-    
-    
-    
-    
-    
+
 }

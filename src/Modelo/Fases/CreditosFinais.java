@@ -1,47 +1,85 @@
 package Modelo.Fases;
 
-import Modelo.*;
+import Modelo.Hero;
+import Modelo.Mensagem;
+import Modelo.Parede;
+import Modelo.Personagem;
+import Modelo.Portal;
 import java.util.ArrayList;
 
 /**
- * Implementação da IFase para os Créditos Finais (Nível 6).
+ * Fase 6: Tela de Créditos.
+ * Implementada como uma fase real, jogável, que não pausa
+ * e tem um portal de volta ao Lobby.
  */
 public class CreditosFinais implements IFase {
 
-    // Fase de créditos é totalmente vazia.
-    // A Tela.java desenha a mensagem final 
-    // quando o nível 6 é carregado.
-    
     @Override
     public ArrayList<Personagem> carregarPersonagensIniciais() {
+        ArrayList<Personagem> fase = new ArrayList<>();
+
+        // 1. Adiciona o Herói (obrigatório para a fase funcionar)
+        fase.add(new Hero(getHeroSkin(), 7, 7)); // Posição central
+
+        // 2. Adiciona as Mensagens (NÃO-BLOQUEANTES) - CORRIGIDO
+        // O 'false' no construtor da Mensagem é a chave!
+        fase.add(new Mensagem("Criado por:", false));
+        fase.add(new Mensagem("Felipe Maia", false));
+        fase.add(new Mensagem("E a IA Dupla :D", false));
+
+        // 3. Adiciona o Portal de volta ao Lobby
+        Portal portalLobby = new Portal("esfera.png", 14, 1); // Canto inferior esquerdo
+        portalLobby.setDestinoFase(0); // 0 = Lobby
+        fase.add(portalLobby);
+
+        // 4. Adiciona as Paredes (Bordas)
+        for (int i = 0; i < 16; i++) {
+            fase.add(new Parede("bricks.png", 0, i)); // Usando bricks
+            fase.add(new Parede("bricks.png", 15, i));
+        }
+        for (int i = 1; i < 15; i++) {
+            fase.add(new Parede("bricks.png", i, 0));
+            fase.add(new Parede("bricks.png", i, 15));
+        }
+
+        return fase;
+    }
+
+    @Override
+    public String getMensagemInicial() {
+        // Esta mensagem SIM, vai pausar o jogo (Bug 1 corrigido)
+        return "PARABENS! VOCE ZEROU O JOGO!";
+    }
+
+    // --- Métodos da Interface que não usamos aqui ---
+    
+    @Override
+    public ArrayList<Personagem> getPersonagensColeta_1() {
         return new ArrayList<>(); // Vazio
     }
 
     @Override
-    public ArrayList<Personagem> getPersonagensColeta_1() { return new ArrayList<>(); }
+    public ArrayList<Personagem> getPersonagensColeta_2() {
+        return new ArrayList<>(); // Vazio
+    }
+
     @Override
-    public ArrayList<Personagem> getPersonagensColeta_2() { return new ArrayList<>(); }
-    @Override
-    public Personagem getPersonagemColeta_3() { return null; }
+    public Personagem getPersonagemColeta_3() {
+        return null; // Vazio
+    }
 
     @Override
     public String getBackgroundTile() {
-        return "blackTile.png"; // Fundo preto
+        return "blackTile.png"; // Fundo preto para os créditos
     }
 
     @Override
     public String getHeroSkin() {
-        return null; // Sem herói
+        return "Hero.png"; // Skin padrão
     }
-    
-    @Override
-    public String getMensagemInicial() {
-        return "FIM DE JOGO!!!\nOBRIGADO POR JOGAR!";
-    }
-    
+
     @Override
     public String getMensagemVitoria() {
-        // Esta é a mensagem que você sugeriu!
-        return "Autores:\nFelipe Freitas Maia\nFelipe Machuca\nMatheus Gauber\nRafael Borges";
+        return null; // Não tem mensagem de vitória, a própria fase é a vitória
     }
 }
