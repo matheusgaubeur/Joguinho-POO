@@ -84,13 +84,18 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     private int cameraLinha = 0;
     private int cameraColuna = 0;
     private final Set<Integer> teclasPressionadas = new HashSet<>();
+    private final Set<Integer> teclasTap = new HashSet<>(); // Lista para "lembrar" do tap
     private javax.swing.ImageIcon iCoracaoHUD;
     private int faseTimer; // NOVO: Timer da fase (para sobrevivência)
     private int spawnTimer; // NOVO: Timer para criar inimigos na Fase 5
     private java.util.Set<Integer> fasesConcluidas; // NOVO: A "Memória" do jogo
     private boolean isGamePaused = false;
     private int idFaseAtual = -1;
-    
+    private boolean isControlPressed = false; // Controla se uma tecla ainda esta pressionada
+    private java.io.File arquivoPincel = null; // O arquivo .gz do item
+    private int heroMoveCooldown = 0; // Timer para o movimento do herói
+    private static final int HERO_MOVE_DELAY = 1;
+    private boolean moveJaProcessadoNesteTick = false; // Controle de movimento do personagem
     
     public Tela() {
         Desenho.setCenario(this);
@@ -278,6 +283,10 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             // Este 'if' agora protege apenas a lógica de jogo, não o timer.
             if (!this.isGamePaused) {
                 
+                // Ambos para controlar o movimento do personagem
+                this.moveJaProcessadoNesteTick = false; // Reseta a trava
+                processarMovimentoHeroi(); // Processa o input do herói
+                
                 String status = this.cj.processaTudo(faseAtual);
                 
                 // PASSO 3: AGIR DE ACORDO COM O STATUS
@@ -449,20 +458,32 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         }
         
         try {
+            // Verificar se uma determinada tecla continua presionada
+            if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+                isControlPressed = true;
+            }
+            // Se a tecla já está na lista de "pressionadas" (por ex, repeat do OS), ignore.
             if (teclasPressionadas.contains(e.getKeyCode()))
                     return;
 
-            teclasPressionadas.add(e.getKeyCode());
-            
-            if (e.getKeyCode() == KeyEvent.VK_T) {
+            // Modificação apra garantir que segurar a tecla de movimento funcione
+            boolean isMoveKey = (e.getKeyCode() == KeyEvent.VK_UP ||
+                                 e.getKeyCode() == KeyEvent.VK_DOWN ||
+                                 e.getKeyCode() == KeyEvent.VK_LEFT ||
+                                 e.getKeyCode() == KeyEvent.VK_RIGHT);
+
+            if (isMoveKey) {
+                teclasPressionadas.add(e.getKeyCode()); // Adiciona ao "Hold"
+                teclasTap.add(e.getKeyCode());          // Adiciona ao "Tap"
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_T) {
                 this.faseAtual.clear();
                 ArrayList<Personagem> novaFase = new ArrayList<Personagem>();
 
                 /*Cria faseAtual adiciona personagens*/
                 Hero novoHeroi = new Hero("Robbo.png", 10, 10);
-                //hero.setPosicao(10, 10);
                 novaFase.add(novoHeroi);
-                this.atualizaCamera();
+                this.atualizaCamera(); // Importante manter isso
 
                 ZigueZague zz = new ZigueZague("bomba.png", 0, 0);
                 novaFase.add(zz);
@@ -471,15 +492,8 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 novaFase.add(es);
 
                 faseAtual = novaFase;
-            } else if (e.getKeyCode() == KeyEvent.VK_UP) {
-                getHero().moveUp();
-            } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                getHero().moveDown();
-            } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                getHero().moveLeft();
-            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                getHero().moveRight();
-            } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                 getHero().atacar();
             } else if (e.getKeyCode() == KeyEvent.VK_S) {
                 File tanque = new File("POO.dat");
@@ -541,16 +555,23 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 // Herói (para definir a posição inicial)
                 salvarPincelGZ(new Hero("Hero.png", 0, 0), "pincel_hero");
             }
-
+            
+            /* Também deve ser apagado pois é a movimentação antiga
             this.atualizaCamera();
             this.setTitle("-> Cell: " + (getHero().getPosicao().getLinha()) + ", " + (getHero().getPosicao().getColuna()));
-
+            */
+            
             //repaint(); /*invoca o paint imediatamente, sem aguardar o refresh*/
         } catch (Exception ee) {
 
         }
     }
     public void keyReleased(KeyEvent e) {
+        // Refetene a tecla pressionada do modo construtor de mapas
+        if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+            isControlPressed = false;
+            arquivoPincel = null; // Limpa o "pincel" quando soltar o Control
+        }
         teclasPressionadas.remove(e.getKeyCode());        
     }    
 
@@ -559,6 +580,19 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         if (this.isGamePaused) {
             return; // Ignora clique do mouse se o jogo estiver pausado
         }
+        
+        // Se o botão esquerdo for pressionado E o modo pincel estiver ativo...
+        if (SwingUtilities.isLeftMouseButton(e) && isControlPressed && arquivoPincel != null) {
+            
+            // Pega o ponto exato do clique
+            Point clickPoint = e.getPoint(); 
+            
+            // Já calcula a posição do grid e da câmera. Perfeito!
+            adicionarPersonagemDoArquivo(this.arquivoPincel, clickPoint);
+            
+            repaint(); // Atualiza a tela
+            return;    // Consome o clique (não faz teleporte/nada mais)
+        }    
         
         // Calcula a posição no *GRID* (levando em conta a câmera)
         int x = e.getX();
@@ -806,6 +840,13 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 for (File file : files) {
                     System.out.println("Arquivo solto: " + file.getName());
                     
+                    // Se o Control estiver pressionado, define este arquivo como pincel
+                    // Necessario para nao ficar arratanso cada elemtno serializado
+                    if (isControlPressed) {
+                        this.arquivoPincel = file;
+                        System.out.println("Modo Pincel ATIVADO com: " + file.getName());
+                    }
+                    
                     // Verifica se é um .gz (como sugere o PDF e o GZIPInputStream)
                     if (file.getName().toLowerCase().endsWith(".gz")) {
                         adicionarPersonagemDoArquivo(file, dropPoint);
@@ -882,6 +923,66 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
         } catch (Exception ex) {
             System.err.println("Erro ao criar pincel: " + ex.getMessage());
+        }
+    }
+    
+     /*
+     * NOVO MÉTODO:
+     * Processa o input de movimento do Herói com um cooldown.
+     * Chamado a cada "tick" do jogo pelo método paint().
+     */
+    private void processarMovimentoHeroi() {
+        boolean moveu = false;
+
+        // 1. PRIORIDADE ALTA: Processar "Taps"
+        // Verificamos se há um "tap" registrado.
+        if (!teclasTap.isEmpty()) {
+            if (teclasTap.contains(KeyEvent.VK_UP)) {
+                getHero().moveUp();
+                moveu = true;
+            } else if (teclasTap.contains(KeyEvent.VK_DOWN)) {
+                getHero().moveDown();
+                moveu = true;
+            } else if (teclasTap.contains(KeyEvent.VK_LEFT)) {
+                getHero().moveLeft();
+                moveu = true;
+            } else if (teclasTap.contains(KeyEvent.VK_RIGHT)) {
+                getHero().moveRight();
+                moveu = true;
+            }
+
+            // Limpamos a lista de taps, pois já os processamos.
+            teclasTap.clear();
+        }
+
+        // 2. PRIORIDADE BAIXA: Processar "Holds"
+        // Só processamos "hold" (segurar) se não houver um "tap"
+        // e se o cooldown estiver zerado.
+        else if (this.heroMoveCooldown == 0) {
+            if (teclasPressionadas.contains(KeyEvent.VK_UP)) {
+                getHero().moveUp();
+                moveu = true;
+            } else if (teclasPressionadas.contains(KeyEvent.VK_DOWN)) {
+                getHero().moveDown();
+                moveu = true;
+            } else if (teclasPressionadas.contains(KeyEvent.VK_LEFT)) {
+                getHero().moveLeft();
+                moveu = true;
+            } else if (teclasPressionadas.contains(KeyEvent.VK_RIGHT)) {
+                getHero().moveRight();
+                moveu = true;
+            }
+        }
+        // 3. LÓGICA DE COOLDOWN
+        // Se o herói se moveu (seja por tap ou hold), resetamos o cooldown
+        if (moveu) {
+            this.heroMoveCooldown = HERO_MOVE_DELAY; // Reseta o timer
+            this.atualizaCamera();
+            this.setTitle("-> Cell: " + (getHero().getPosicao().getLinha()) + ", " + (getHero().getPosicao().getColuna()));
+        } 
+        // Se o herói não se moveu, mas o cooldown estava ativo, o decrementamos
+        else if (this.heroMoveCooldown > 0) {
+            this.heroMoveCooldown--;
         }
     }
 }
