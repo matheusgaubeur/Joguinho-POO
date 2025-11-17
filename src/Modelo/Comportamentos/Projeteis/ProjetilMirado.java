@@ -7,11 +7,7 @@ import Modelo.Personagem;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Um projétil que é disparado em direção a uma posição-alvo (a posicao do herói).
- * Ele calcula sua trajetória (vetor dx, dy) uma vez e a segue.
- * Herda de Personagem (como ProjetilHeroi)
- */
+
 public class ProjetilMirado extends Personagem implements Serializable, Mortal {
     private static final long serialVersionUID = 1L;
     
@@ -22,31 +18,22 @@ public class ProjetilMirado extends Personagem implements Serializable, Mortal {
     private int contadorMovimento = 0;
     private static final int VELOCIDADE = 1;
 
-    /**
-     * @param sNomeImagePNG Imagem do projétil
-     * @param posAtirador Posição de onde o tiro sai
-     * @param posHeroi Posição do alvo (para onde o tiro vai)
-     */
     public ProjetilMirado(String sNomeImagePNG, Posicao posAtirador, Posicao posHeroi) {
         // Nasce na posição do atirador
         super(sNomeImagePNG, posAtirador.getLinha(), posAtirador.getColuna());
         this.bTransponivel = true;
         this.contadorMovimento = 0;
 
-        // --- A MÁGICA: Cálculo do Vetor de Direção ---
         // Calcula a diferença
         int deltaLinha = posHeroi.getLinha() - posAtirador.getLinha();
         int deltaColuna = posHeroi.getColuna() - posAtirador.getColuna();
 
         // Converte a diferença para um vetor normalizado (-1, 0, ou 1)
-        // Ex: Math.signum(10) = 1, Math.signum(-5) = -1, Math.signum(0) = 0
         this.dy = (int) Math.signum(deltaLinha);
         this.dx = (int) Math.signum(deltaColuna);
         
         // Caso de borda: Se o Herói está exatamente em cima do atirador,
-        // o projétil ficaria parado (dx=0, dy=0).
-        // Vamos forçá-lo a ir para a direita, como um tiro padrão.
-        if (this.dx == 0 && this.dy == 0) {
+               if (this.dx == 0 && this.dy == 0) {
             this.dx = 1; // Padrão: move para a direita
         }
     }
@@ -82,9 +69,6 @@ public class ProjetilMirado extends Personagem implements Serializable, Mortal {
             this.morrer(); // Usa a flag bEstaVivo
         }
         
-        // NOTA: Ao contrário do ProjetilHeroi, não precisamos checar
-        // colisão com inimigos. Ele só precisa se mover. A colisão
-        // com o Herói é tratada pelo ControleDeJogo.
     }
     
     @Override
@@ -92,4 +76,5 @@ public class ProjetilMirado extends Personagem implements Serializable, Mortal {
         // É um projétil inimigo, então mata o herói
         return "HERO_DIED";
     }
+
 }
