@@ -126,7 +126,7 @@ public class Hero extends Personagem implements Serializable{
     
     public void setSkin(String sNomeImagePNG) {
         try {
-            // Esse código é copiado do construtor de Personagem.java
+            // Código copiado do construtor de Personagem.java
             iImage = new javax.swing.ImageIcon(new java.io.File(".").getCanonicalPath() + Auxiliar.Consts.PATH + sNomeImagePNG);
             java.awt.Image img = iImage.getImage();
             java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(Auxiliar.Consts.CELL_SIDE, Auxiliar.Consts.CELL_SIDE, java.awt.image.BufferedImage.TYPE_INT_ARGB);
