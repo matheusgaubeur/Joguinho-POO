@@ -1,7 +1,10 @@
 package Modelo;
 
-// Implementa a interface 'Coletavel' que já criamos
-public class Municao extends Personagem implements Coletavel {
+import java.io.Serializable;
+
+// Implementa a interface 'Coletavel'
+public class Municao extends Personagem implements Serializable, Coletavel {
+    private static final long serialVersionUID = 1L;
 
     public Municao(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
@@ -16,7 +19,6 @@ public class Municao extends Personagem implements Coletavel {
     
     @Override
     public String aoColidirComHeroi(Hero h) {
-        // Avisa o ControleDeJogo que a munição foi coletada
         return "MUNICAO_COLETADA"; 
     }
 }

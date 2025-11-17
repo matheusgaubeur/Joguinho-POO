@@ -1,19 +1,12 @@
 package Modelo;
 
-import Auxiliar.Consts;
+import Modelo.Comportamentos.Projeteis.ProjetilHeroi;
 import Auxiliar.Desenho;
-import Controler.ControleDeJogo;
-import Controler.Tela;
-import auxiliar.Posicao;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.io.IOException;
+import Auxiliar.Posicao;
 import java.io.Serializable;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 
 public class Hero extends Personagem implements Serializable{
+    private static final long serialVersionUID = 1L;
     private int numChaves = 0;
     private int nMunicao = 5; // Começa com 5 balas
     private int ultimaDirecao = 3; // 0=Cima, 1=Baixo, 2=Esquerda, 3=Direita (padrão)
@@ -38,22 +31,19 @@ public class Hero extends Personagem implements Serializable{
         }
     }
     
-    // ADICIONE ESTES DOIS NOVOS MÉTODOS
     public void adicionarMunicao(int quantidade) {
         this.nMunicao += quantidade;
         System.out.println("Municaoo coletada! Total: " + this.nMunicao);
     }
     
-    /**
-     * Define a contagem de munição (usado ao trocar de fase).
-     */
+
+    // Define a contagem de munição (usado ao trocar de fase).
     public void setMunicao(int nMunicao) {
         this.nMunicao = nMunicao;
     }
 
-    /**
-     * Define a contagem de chaves (usado ao trocar de fase).
-     */
+
+    //Define a contagem de chaves (usado ao trocar de fase).
     public void setChaves(int numChaves) {
         this.numChaves = numChaves;
     }
@@ -67,22 +57,23 @@ public class Hero extends Personagem implements Serializable{
         this.nMunicao--;
         System.out.println("Tiro! Municao restante: " + this.nMunicao);
         
-        // ESTA É A LINHA CORRIGIDA (Erro 2)
         Posicao p = new Posicao(this.getPosicao().getLinha(), this.getPosicao().getColuna());
         
         // Ajusta a posição de spawn do projétil
-        if(ultimaDirecao == 0) p.moveUp();
-        else if(ultimaDirecao == 1) p.moveDown();
-        else if(ultimaDirecao == 2) p.moveLeft();
-        else p.moveRight();
+        switch (ultimaDirecao) {
+            case 0 -> p.moveUp();
+            case 1 -> p.moveDown();
+            case 2 -> p.moveLeft();
+            default -> p.moveRight();
+        }
         
-        // (Usando "fire.png" como placeholder por enquanto)
-        ProjetilHeroi proj = new ProjetilHeroi("fire.png", p.getLinha(), p.getColuna(), this.ultimaDirecao);
+        ProjetilHeroi proj = new ProjetilHeroi("HeroiProjetil.png", p.getLinha(), p.getColuna(), this.ultimaDirecao);
         
-        // Adiciona o projétil ao jogo (pela forma que o protótipo usa)
+        // Adiciona o projétil ao jogo
         Desenho.acessoATelaDoJogo().addPersonagem(proj);
     }
     
+    @Override
     public boolean setPosicao(int linha, int coluna){
         if(this.pPosicao.setPosicao(linha, coluna)){
             if (!Desenho.acessoATelaDoJogo().ehPosicaoValida(this.getPosicao())) {
@@ -93,7 +84,6 @@ public class Hero extends Personagem implements Serializable{
         return false;       
     }
 
-    /*TO-DO: este metodo pode ser interessante a todos os personagens que se movem*/
     private boolean validaPosicao(){
         if (!Desenho.acessoATelaDoJogo().ehPosicaoValida(this.getPosicao())) {
             this.voltaAUltimaPosicao();
@@ -102,10 +92,9 @@ public class Hero extends Personagem implements Serializable{
         return true;       
     }
     
-    // MODIFICAR MÉTODOS DE MOVIMENTO
     @Override
     public boolean moveUp() {
-        this.ultimaDirecao = 0; // <<-- ADICIONAR
+        this.ultimaDirecao = 0;
         if(super.moveUp())
             return validaPosicao();
         return false;
@@ -113,7 +102,7 @@ public class Hero extends Personagem implements Serializable{
 
     @Override
     public boolean moveDown() {
-        this.ultimaDirecao = 1; // <<-- ADICIONAR
+        this.ultimaDirecao = 1;
         if(super.moveDown())
             return validaPosicao();
         return false;
@@ -121,7 +110,7 @@ public class Hero extends Personagem implements Serializable{
 
     @Override
     public boolean moveLeft() {
-        this.ultimaDirecao = 2; // <<-- ADICIONAR
+        this.ultimaDirecao = 2;
         if(super.moveLeft())
             return validaPosicao();
         return false;
@@ -129,7 +118,7 @@ public class Hero extends Personagem implements Serializable{
 
     @Override
     public boolean moveRight() {
-        this.ultimaDirecao = 3; // <<-- ADICIONAR
+        this.ultimaDirecao = 3;
         if(super.moveRight())
             return validaPosicao();
         return false;
@@ -149,18 +138,12 @@ public class Hero extends Personagem implements Serializable{
         }
     }
     
-    /**
-     * Permite que o HUD leia a quantidade de chaves.
-     * @return O número atual de chaves.
-     */
+    //Permite que o HUD leia a quantidade de chaves.
     public int getNumChaves() {
         return this.numChaves;
     }
     
-    /**
-     * Permite que o HUD leia a quantidade de munição.
-     * @return O número atual de munições.
-     */
+    //Permite que o HUD leia a quantidade de munição.
     public int getNumMunicao() {
         return this.nMunicao;
     }

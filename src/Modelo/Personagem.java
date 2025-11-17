@@ -2,14 +2,13 @@ package Modelo;
 
 import Auxiliar.Consts;
 import Auxiliar.Desenho;
-import Modelo.Comportamentos.Ataque.AtaqueNulo; // <<-- MUDANÇA
-import Modelo.Comportamentos.Movimento.MovimentoParado; // <<-- MUDANÇA
-import Modelo.Comportamentos.Movimento.ComportamentoMovimento; // <<-- MUDANÇA
-import Modelo.Comportamentos.Ataque.ComportamentoAtaque; // <<-- MUDANÇA
-import auxiliar.Posicao;
+import Modelo.Comportamentos.Ataque.AtaqueNulo;
+import Modelo.Comportamentos.Movimento.MovimentoParado;
+import Modelo.Comportamentos.Movimento.ComportamentoMovimento;
+import Modelo.Comportamentos.Ataque.ComportamentoAtaque;
+import Auxiliar.Posicao;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
@@ -17,7 +16,7 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 public abstract class Personagem implements Serializable {
-
+    private static final long serialVersionUID = 1L;
     protected ImageIcon iImage;
     protected Posicao pPosicao;
     protected boolean bTransponivel;
@@ -31,7 +30,6 @@ public abstract class Personagem implements Serializable {
         this.bTransponivel = false;
         this.pPosicaoAnterior = new Posicao(linha, coluna);
         
-        // <<-- MUDANÇA: Define o comportamento padrão (parado e sem ataque)
         // Classes filhas vão sobrescrever isso em seus construtores
         this.meuMovimento = new MovimentoParado();
         this.meuAtaque = new AtaqueNulo();
@@ -50,8 +48,6 @@ public abstract class Personagem implements Serializable {
     }
 
     public Posicao getPosicao() {
-        /*TODO: Retirar este método para que objetos externos nao possam operar
-         diretamente sobre a posição do Personagem*/
         return pPosicao;
     }
 
@@ -67,7 +63,6 @@ public abstract class Personagem implements Serializable {
         this.bTransponivel = bTransponivel;
     }
     
-    // <<-- MUDANÇA: Os "setters" para o Padrão Strategy
     public void setComportamentoMovimento(ComportamentoMovimento c) {
         this.meuMovimento = c;
     }
@@ -76,23 +71,18 @@ public abstract class Personagem implements Serializable {
         this.meuAtaque = c;
     }
     
-     public boolean isVivo() {
-         return bEstaVivo;
-     }
+    public boolean isVivo() {
+        return bEstaVivo;
+    }
 
-     public void morrer() {
-         // TODO: No futuro, podemos adicionar a lógica de animação de explosão aqui!
-         // Por agora, apenas marcamos para remoção.
-         this.bEstaVivo = false;
-     } 
+    public void morrer() {
+        this.bEstaVivo = false;
+    } 
 
     public void desenhar(){
         Desenho.desenhar(this.iImage, this.pPosicao.getColuna(), this.pPosicao.getLinha());
     }
     
-    /**
-     * Atualiza a lógica do personagem delegando para seus comportamentos.
-     */
     public void atualizar(ArrayList<Personagem> faseAtual, Hero hero) {
         // Delega a responsabilidade de mover para a Estratégia de Movimento
         meuMovimento.executar(this, faseAtual, hero);
@@ -100,54 +90,37 @@ public abstract class Personagem implements Serializable {
         // Delega a responsabilidade de atacar para a Estratégia de Ataque
         meuAtaque.executar(this, faseAtual, hero);
     }
-
-    // <<-- MUDANÇA IMPORTANTE:
-    // Os métodos de movimento (moveUp, moveDown, etc.) PERMANECEM AQUI!
-    // As Estratégias vão chamar "p.moveUp()". 
-    // A violação de Liskov foi corrigida porque um personagem "Estatico"
-    // (agora com MovimentoParado) NUNCA vai chamar estes métodos.
     
     public boolean setPosicao(int linha, int coluna) {
         return pPosicao.setPosicao(linha, coluna);
     }
 
-    // O NOVO código em Personagem.java
     public boolean moveUp() {
-        // 1. Salva a posição ATUAL em pPosicaoAnterior
+        // Salva a posição ATUAL em pPosicaoAnterior
         this.pPosicaoAnterior.setPosicao(this.pPosicao.getLinha(), this.pPosicao.getColuna());
-        // 2. Move-se para a nova posição
         return this.pPosicao.moveUp();
     }
 
     public boolean moveDown() {
-        // 1. Salva a posição ATUAL em pPosicaoAnterior
+        // Salva a posição ATUAL em pPosicaoAnterior
         this.pPosicaoAnterior.setPosicao(this.pPosicao.getLinha(), this.pPosicao.getColuna());
-        // 2. Move-se para a nova posição
         return this.pPosicao.moveDown();
     }
 
     public boolean moveLeft() {
-        // 1. Salva a posição ATUAL em pPosicaoAnterior
+        // Salva a posição ATUAL em pPosicaoAnterior
         this.pPosicaoAnterior.setPosicao(this.pPosicao.getLinha(), this.pPosicao.getColuna());
-        // 2. Move-se para a nova posição
         return this.pPosicao.moveLeft();
     }
 
     public boolean moveRight() {
-        // 1. Salva a posição ATUAL em pPosicaoAnterior
+        // Salva a posição ATUAL em pPosicaoAnterior
         this.pPosicaoAnterior.setPosicao(this.pPosicao.getLinha(), this.pPosicao.getColuna());
-        // 2. Move-se para a nova posição
         return this.pPosicao.moveRight();
     }
     
-/**
- * Define o que acontece quando o Herói colide com este personagem.
- * @param h O próprio Herói (para checar estado, ex: se tem chaves)
- * @return Uma string de status para o ControleDeJogo (ex: "HERO_DIED")
- */
-public String aoColidirComHeroi(Hero h) {
-    return "GAME_RUNNING"; 
-}
-
-    
+    //Define o que acontece quando o Herói colide com este personagem.
+    public String aoColidirComHeroi(Hero h) {
+        return "GAME_RUNNING"; 
+    }  
 }

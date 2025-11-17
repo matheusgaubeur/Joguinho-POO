@@ -2,13 +2,11 @@ package Modelo.Comportamentos.Movimento;
 
 import Modelo.Hero;
 import Modelo.Personagem;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia de Movimento para um personagem que NUNCA se move.
- * (Substitui a necessidade da classe Estatico)
- */
-public class MovimentoParado implements ComportamentoMovimento {
+public class MovimentoParado implements Serializable, ComportamentoMovimento {
+    private static final long serialVersionUID = 1L;
     @Override
     public void executar(Personagem p, ArrayList<Personagem> faseAtual, Hero hero) {
         // Não faz nada. Está parado.

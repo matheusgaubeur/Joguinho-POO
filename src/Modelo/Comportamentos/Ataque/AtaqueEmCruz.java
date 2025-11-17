@@ -2,33 +2,24 @@ package Modelo.Comportamentos.Ataque;
 
 import Modelo.Hero;
 import Modelo.Personagem;
-import Modelo.Fogo;         // Projétil que move para a DIREITA
-import Modelo.BolaDeLama;   // Projétil que move para a ESQUERDA
-import Modelo.BolhaDeAr;    // Projétil que move para CIMA
-import Modelo.ProjetilBaixo; // Projétil que move para BAIXO
+import Modelo.Comportamentos.Projeteis.ProjetilBaixo;
 import Auxiliar.Desenho;
-import Modelo.ProjetilCima;
-import Modelo.ProjetilDireita;
-import Modelo.ProjetilEsquerda;
+import Modelo.Comportamentos.Projeteis.ProjetilCima;
+import Modelo.Comportamentos.Projeteis.ProjetilDireita;
+import Modelo.Comportamentos.Projeteis.ProjetilEsquerda;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia de Ataque (Padrão Strategy) que dispara quatro projéteis
- * nas direções cardeais (Cima, Baixo, Esquerda, Direita).
- */
-public class AtaqueEmCruz implements ComportamentoAtaque {
-
+// Atira em todas as direçoces (Cima, Baixo, Esquerda, Direita).
+public class AtaqueEmCruz implements Serializable, ComportamentoAtaque {
+    private static final long serialVersionUID = 1L;
     private int contador = 0;
     
-    // Define o cooldown do ataque (ex: 30 ticks * 150ms = 4.5 segundos)
+    // Define o cooldown do ataque
     private static final int INTERVALO = 30; 
     
-    private String nomeImagemProjetil;
+    private final String nomeImagemProjetil;
 
-    /**
-     * Construtor.
-     * @param sNomeImagePNG A imagem que os projéteis usarão (ex: "fire.png")
-     */
     public AtaqueEmCruz(String sNomeImagePNG) {
         this.nomeImagemProjetil = sNomeImagePNG;
     }
@@ -43,16 +34,14 @@ public class AtaqueEmCruz implements ComportamentoAtaque {
             return;
         }
 
-        // 3. O timer chegou! Hora de atacar.
+        // 3. O timer chegou
         contador = 0; // Reseta o timer
 
-        // 4. Define o ponto de "nascimento" dos projéteis.
-        // Eles vão nascer ao redor do atirador.
+        // 4. Define o ponto de nascimento dos projéteis.
         int linha = p.getPosicao().getLinha();
         int coluna = p.getPosicao().getColuna();
 
         // 5. Cria os quatro projéteis
-        // MUDANÇA NOS NOMES DAS CLASSES
         Personagem pCima = new ProjetilCima(
             this.nomeImagemProjetil, linha - 1, coluna
         );

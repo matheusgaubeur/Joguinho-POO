@@ -1,104 +1,93 @@
 package Modelo.Fases;
 
+import Controler.Tela;
 import Modelo.*;
+import Modelo.Inimigos.Fantasma;
+import Modelo.Inimigos.Morcego;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 
-/**
- * Implementação da IFase para o Nível 4 (Chuva e Raio).
- * Implementa a lógica de itens sequenciais.
- */
 public class Fase4 implements IFase {
 
     @Override
     public ArrayList<Personagem> carregarPersonagensIniciais() {
         ArrayList<Personagem> fase = new ArrayList<>();
-        
-        // 1. Adiciona o Herói
-        fase.add(new Hero(getHeroSkin(), 1, 7)); // Topo central
-        
-        // 2. Adiciona o PRIMEIRO ItemChave
-        // (Usando "coracao.png" como placeholder)
-        fase.add(new ItemChave("coracao.png", 14, 7)); // Embaixo
-        
-        // 3. Adiciona Inimigos Iniciais
-        fase.add(new RoboAtirador("robo.png", 1, 1)); // Canto superior esquerdo
-        fase.add(new RoboAtirador("robo.png", 1, 14)); // Canto superior direito
 
-        // <<-- MUDANÇA: Adiciona inimigo de patrulha da Fase 4 (ZigueZague)
-        // (Usando "robo.png" como placeholder)
-        fase.add(new ZigueZague("robo.png", 5, 7));
-        
-        // 4. Adiciona Paredes/Obstáculos (Raios Estáticos)
-        // (Usando "bricks.png" como placeholder de "raio_parede.png")
-        for (int i = 0; i < 16; i++) {
-            fase.add(new Parede("bricks.png", 0, i)); // Borda Superior
-            fase.add(new Parede("bricks.png", 15, i)); // Borda Inferior
+        try (FileInputStream fis = new FileInputStream("fase4_layout.dat");
+             ObjectInputStream serializador = new ObjectInputStream(fis)) {
+
+            // 1. Carrega o objeto de save do arquivo
+            Tela.SaveState save = (Tela.SaveState) serializador.readObject();
+
+            // 2. Adiciona todos os personagens do save na lista da fase
+            fase.addAll(save.faseAtual);
+
+        } catch (Exception ex) {
+            System.err.println("ERRO AO CARREGAR 'fase4_layout.dat': " + ex.getMessage());
+            if (fase.isEmpty()) {
+                fase.add(new Hero("Heroi.png", 1, 1));
+                fase.add(new Mensagem("ERRO: 'fase4_layout.dat' NAO ENCONTRADO!", true));
+            }
         }
-        for (int i = 1; i < 15; i++) {
-            fase.add(new Parede("bricks.png", i, 0)); // Borda Esquerda
-            fase.add(new Parede("bricks.png", i, 15)); // Borda Direita
-        }
         
-        // Raios estáticos (Paredes) no meio
-        fase.add(new Parede("bricks.png", 7, 3));
-        fase.add(new Parede("bricks.png", 7, 4));
-        fase.add(new Parede("bricks.png", 7, 5));
-        fase.add(new Parede("bricks.png", 7, 9));
-        fase.add(new Parede("bricks.png", 7, 10));
-        fase.add(new Parede("bricks.png", 7, 11));
+        // --- ADIÇÕES MANUAIS (Pós-Layout) ---
+        fase.add(new Fantasma("CavernaFantasma.png",18,4));
+        fase.add(new Morcego("CavernaMorcego.png",5,22));
+        fase.add(new Fantasma("CavernaFantasma.png",45,3));
+        fase.add(new Fantasma("CavernaFantasma.png",2,26));
+        fase.add(new Artefato("CavernaArtefato.png",42,46));
+        
+        
+        fase.add(new Chave("ZChave.png", 45,4));
+        fase.add(new Chave("ZChave.png", 5,23));
+        fase.add(new Chave("ZChave.png", 36,44));
+        fase.add(new Chave("ZChave.png", 23,25));
+        fase.add(new Chave("ZChave.png", 46,32));
+        fase.add(new Bau("ZBau.png", 11, 37));
+        fase.add(new Bau("ZBau.png", 33,33));
+        fase.add(new Bau("ZBau.png", 13,22));
+     
+        fase.add(new PortaFechada("ZPortaVelha.png",31,19));
+        fase.add(new PortaFechada("ZPortaVelha.png",19,38));
+        fase.add(new PortaFechada("ZPortaVelha.png",37,39));
         
         return fase;
     }
 
     @Override
     public ArrayList<Personagem> getPersonagensColeta_1() {
-        // "Raio (preenche 3x3 por alguns segundos)"
-        // (Esta é a classe mais difícil, o Raio 3x3. Vamos pular ela por agora
-        // e implementar só o item. Podemos voltar nela se der tempo)
-        ArrayList<Personagem> obstaculos = new ArrayList<>();
-        
-        // Adiciona o SEGUNDO ItemChave
-        obstaculos.add(new ItemChave("coracao.png", 5, 1));
-        
-        return obstaculos;
+        ArrayList<Personagem> mods = new ArrayList<>();
+        mods.add(new Morcego("CavernaMorcego.png", 46,13));
+        mods.add(new Artefato("CavernaArtefato.png", 46,14));
+        mods.add(new Fantasma("CavernaFantasma.png", 2,26));        
+        mods.add(new Morcego("CavernaMorcego.png", 3,47));
+        return mods;
     }
 
     @Override
     public ArrayList<Personagem> getPersonagensColeta_2() {
-        // "Drone seguidor com asas afiadas" (Chefão)
-        ArrayList<Personagem> chefao = new ArrayList<>();
-        
-        // (Usando Chaser com skin "chaser.png" como placeholder)
-        chefao.add(new Chaser("chaser.png", 14, 14));
-        
-        // Adiciona o TERCEIRO ItemChave
-        chefao.add(new ItemChave("coracao.png", 6, 14));
-        
-        return chefao;
+        ArrayList<Personagem> mods = new ArrayList<>();
+        mods.add(new Morcego("CavernaMorcego.png", 43,46));
+        mods.add(new Morcego("CavernaMorcego.png", 26,40));
+        mods.add(new Fantasma("CavernaFantasma.png", 2,29));
+         mods.add(new Fantasma("CavernaFantasma.png", 43,46));
+        mods.add(new Artefato("CavernaArtefato.png", 26,41));
+        return mods;
     }
 
     @Override
     public Personagem getPersonagemColeta_3() {
-        // Portal de saída
-        // (Usando "esfera.png" como placeholder)
-        Portal saida = new Portal("esfera.png", 7, 7); // Centro
-        saida.setDestinoFase(0); // Volta ao Lobby
+        Portal saida = new Portal("ZPortaLobby.png", 5, 5);
+        saida.setDestinoFase(0);
         return saida;
     }
 
     @Override
     public String getBackgroundTile() {
-        // Placeholder (precisamos de "nuvem_tile.png" ou "chao_metal.png")
-        return "blackTile.png";
-    }
-
-    @Override
-    public String getHeroSkin() {
-        // Placeholder "Capa de Chuva"
-        return "skoot.png";
+        return "CavernaPiso.png";
     }
     
-    // Adicione este método dentro da classe Fase3.java
     @Override
     public String getMensagemInicial() {
         return "Quem apagou a luz? \nNão consigo ver nada nessa caverna escura!";
@@ -106,7 +95,6 @@ public class Fase4 implements IFase {
     
     @Override
     public String getMensagemVitoria() {
-        // Esta é a mensagem que você sugeriu!
-        return "Ufa! Finalmente um pouco de luz!\nVocê escapou da caverna!";
+        return "Ufa, finalmente um pouco de luz!\nVocê escapou da caverna.";
     }
 }

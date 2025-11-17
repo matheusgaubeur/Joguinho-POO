@@ -1,5 +1,6 @@
 package Modelo.Fases;
 
+import Modelo.Inimigos.BossFinal;
 import Modelo.*;
 import java.util.ArrayList;
 
@@ -10,19 +11,33 @@ public class Fase5 implements IFase {
         ArrayList<Personagem> fase = new ArrayList<>();
         
         // 1. Adiciona o Herói
-        fase.add(new Hero("Hero.png", 1, 1)); // Canto superior esquerdo
+        fase.add(new Hero("Heroi.png", 1, 1)); // Canto superior esquerdo
         
         // 2. Adiciona o BossFinal
-        fase.add(new BossFinal("caveira.png", 7, 7)); // No centro
+        fase.add(new BossFinal("BOSS.png", 7, 7)); // No centro
 
-        // 3. Adiciona Paredes (layout de arena)
-        for (int i = 0; i < 16; i++) {
-            fase.add(new Parede("bricks.png", 0, i)); 
-            fase.add(new Parede("bricks.png", 15, i));
+        // 4. Adiciona as Paredes
+        for (int i = 0; i < 12; i++) {
+            fase.add(new Parede("BossParede.png", 0, i));
+            fase.add(new Parede("BossParede.png", 11, i));
         }
-        for (int i = 1; i < 15; i++) {
-            fase.add(new Parede("bricks.png", i, 0));
-            fase.add(new Parede("bricks.png", i, 15));
+        for (int i = 1; i < 11; i++) {
+            fase.add(new Parede("BossParede.png", i, 0));
+            fase.add(new Parede("BossParede.png", i, 11));
+        }
+        
+        // 5. Completa a área externa com tiles pretos
+        for (int i = 0; i < 12; i++) {
+            fase.add(new Parede("ZPisoPreto.png", 12, i));
+            fase.add(new Parede("ZPisoPreto.png", 13, i));
+            fase.add(new Parede("ZPisoPreto.png", 14, i));
+            fase.add(new Parede("ZPisoPreto.png", 15, i));
+        }
+        for (int i = 0; i < 16; i++) {
+            fase.add(new Parede("ZPisoPreto.png", i, 12));
+            fase.add(new Parede("ZPisoPreto.png", i, 13));
+            fase.add(new Parede("ZPisoPreto.png", i, 14));
+            fase.add(new Parede("ZPisoPreto.png", i, 15));
         }
         
         return fase;
@@ -38,12 +53,7 @@ public class Fase5 implements IFase {
 
     @Override
     public String getBackgroundTile() {
-        return "blackTile.png";
-    }
-
-    @Override
-    public String getHeroSkin() {
-        return "Robbo.png"; // Skin de Herói
+        return "BossPiso.png";
     }
     
     @Override

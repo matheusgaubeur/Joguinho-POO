@@ -1,17 +1,22 @@
 package Controler;
 
+// IMPORTS DE MODELO (Apenas os utilizados)
 import Modelo.Personagem;
-import Modelo.Caveira;
 import Modelo.Hero;
-import Modelo.Chaser;
-import Modelo.BichinhoVaiVemHorizontal;
+import Modelo.Fases.IFase;
+import Modelo.Mensagem;
+import Modelo.Parede;
+import Modelo.Bau;
+import Modelo.Chave;
+import Modelo.Portal;
+import Modelo.Artefato;
+import Modelo.Fases.Lobby;  
+
+// IMPORTS DE AUXILIARES
 import Auxiliar.Consts;
-import Auxiliar.Desenho;
-import Modelo.BichinhoVaiVemVertical;
-import Modelo.Esfera;
-import Modelo.ZigueZague;
-import auxiliar.Posicao;
-import java.awt.FlowLayout;
+import Auxiliar.Posicao; 
+
+// IMPORTS DE UTILIDADES JAVA E SWING/AWT
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -30,138 +35,111 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Random;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import javax.swing.JButton;
+import javax.swing.SwingUtilities;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
-import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.List;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-import Modelo.Fases.IFase;
-import Modelo.InimigoCircular;
-import Modelo.InimigoDiagonal;
-import Modelo.Jacare;
-import Modelo.Portal;
-import Modelo.ItemChave;
-import Modelo.Mensagem;
-import Modelo.RoboAtirador;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.util.Random;
-import Modelo.Parede; // <-- Importante
-import Modelo.Bau; // <-- Importante
-import Modelo.Chave; // <-- Importante
-import Modelo.Portal; // <-- Importante
-import Modelo.ItemChave; // <-- Importante
-import javax.swing.SwingUtilities;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 public class Tela extends javax.swing.JFrame implements MouseListener, KeyListener, DropTargetListener {
-
+    
     private GerenciadorFase gFase;
     private IFase configFaseAtual;
-    private int nivelAtual;
     private int vidas;
     private int pontuacao;
     private int itensColetados;
     private String backgroundTile;
     private ArrayList<Personagem> faseAtual;
-    private ControleDeJogo cj = new ControleDeJogo();
+    private final ControleDeJogo cj = new ControleDeJogo();
     private Graphics g2;
     private int cameraLinha = 0;
     private int cameraColuna = 0;
     private final Set<Integer> teclasPressionadas = new HashSet<>();
-    private final Set<Integer> teclasTap = new HashSet<>(); // Lista para "lembrar" do tap
+    private final Set<Integer> teclasTap = new HashSet<>();
     private javax.swing.ImageIcon iCoracaoHUD;
-    private int faseTimer; // NOVO: Timer da fase (para sobrevivência)
-    private int spawnTimer; // NOVO: Timer para criar inimigos na Fase 5
-    private java.util.Set<Integer> fasesConcluidas; // NOVO: A "Memória" do jogo
+    private final Set<Integer> fasesConcluidas; // FINAL: Apenas o conteúdo pode ser alterado
     private boolean isGamePaused = false;
     private int idFaseAtual = -1;
-    private boolean isControlPressed = false; // Controla se uma tecla ainda esta pressionada
-    private java.io.File arquivoPincel = null; // O arquivo .gz do item
-    private int heroMoveCooldown = 0; // Timer para o movimento do herói
+    private boolean isControlPressed = false;
+    private File arquivoPincel = null;
+    private int heroMoveCooldown = 0;
     private static final int HERO_MOVE_DELAY = 1;
-    private boolean moveJaProcessadoNesteTick = false; // Controle de movimento do personagem
     
     public Tela() {
-        Desenho.setCenario(this);
         initComponents();
-        this.addMouseListener(this);
-        this.addKeyListener(this);
-        new DropTarget(this, this);
+        
+        // As configurações que usam 'this' foram movidas para Main.java.
+        
         this.setSize(Consts.RES * Consts.CELL_SIDE + getInsets().left + getInsets().right,
                 Consts.RES * Consts.CELL_SIDE + getInsets().top + getInsets().bottom);
 
-        // --- LÓGICA DE INICIALIZAÇÃO MODIFICADA ---
+        // Lógica de Inicialização do Jogo
         this.gFase = new GerenciadorFase();
         this.vidas = 10;
         this.pontuacao = 0;
-        this.fasesConcluidas = new java.util.HashSet<>();
+        this.fasesConcluidas = new HashSet<>();
         
-        this.faseAtual = new ArrayList<Personagem>(); // Inicia a lista vazia
-        this.iniciarFase(this.idFaseAtual); // Inicia o jogo no Lobby (Nível 0)
+        this.faseAtual = new ArrayList<>();
+        this.iniciarFase(this.idFaseAtual);
         
-        // NOVO: Carrega a imagem do coração para o HUD
+        // Carrega a imagem do coração para o HUD
         try {
-            iCoracaoHUD = new javax.swing.ImageIcon(new java.io.File(".").getCanonicalPath() + Consts.PATH + "coracao.png");
-            // NOVO: Define o tamanho do ícone do HUD (ex: metade de uma célula)
+            iCoracaoHUD = new javax.swing.ImageIcon(new File(".").getCanonicalPath() + Consts.PATH + "ZVida.png");
             int tamanhoIcone = Consts.CELL_SIDE / 2; 
             
-            java.awt.Image img = iCoracaoHUD.getImage();
-            java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(tamanhoIcone, tamanhoIcone, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-            java.awt.Graphics g = bi.createGraphics();
+            Image img = iCoracaoHUD.getImage();
+            BufferedImage bi = new BufferedImage(tamanhoIcone, tamanhoIcone, BufferedImage.TYPE_INT_ARGB);
+            Graphics g = bi.createGraphics();
             g.drawImage(img, 0, 0, tamanhoIcone, tamanhoIcone, null);
             iCoracaoHUD = new javax.swing.ImageIcon(bi);
-        } catch (java.io.IOException ex) {
+        } catch (IOException ex) {
             System.out.println("Erro ao carregar imagem do HUD: " + ex.getMessage());
         }
+
     }
     
-    /**
-     * NOVO MÉTODO:
-     * Centraliza a lógica de carregar, reiniciar ou trocar de fase.
-     * @param idFase O número da fase a ser carregada.
-     */
-    public void iniciarFase(int idFase) {
+    /** Centraliza a lógica de carregar, reiniciar ou trocar de fase. */
+    private void iniciarFase(int idFase) {
         
-        // 1. Pega o estado do Herói *antes* de limpar a fase
+        // 1. Cache do estado do Herói
         Hero heroiAntigo = getHero();
-        int municaoCache = 5; // Valor padrão se não houver Herói
-        int chavesCache = 0;   // Valor padrão
+        int municaoCache = 5;
+        int chavesCache = 0;
 
         if (heroiAntigo != null) {
             municaoCache = heroiAntigo.getNumMunicao();
             chavesCache = heroiAntigo.getNumChaves();
         }
         
-        // Limpa a fase antiga
+        // Limpa a fase antiga e input
         this.faseAtual.clear();
         this.teclasPressionadas.clear();
 
         // Salva o histórico de IDs
-        int idFaseAnterior = this.idFaseAtual; // De onde viemos
-        this.idFaseAtual = idFase; // Para onde vamos
+        int idFaseAnterior = this.idFaseAtual;
+        this.idFaseAtual = idFase;
 
         // Carrega a nova configuração de fase
         this.configFaseAtual = gFase.getFase(this.idFaseAtual);
-        // PODE REMOVER ISSO
-        if (this.configFaseAtual instanceof Modelo.Fases.Lobby) {
-            ((Modelo.Fases.Lobby) this.configFaseAtual).atualizarFasesConcluidas(this.fasesConcluidas);
+        
+        // Lógica de Lobby para atualizar fases concluídas
+        if (this.configFaseAtual instanceof Lobby lobby) {
+            lobby.atualizarFasesConcluidas(this.fasesConcluidas);
         }
+        
         if (this.configFaseAtual == null) {
             System.err.println("ERRO: Tentando carregar fase inexistente ID: " + this.idFaseAtual);
             return;
@@ -170,50 +148,45 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         // Carrega os personagens da nova fase
         this.faseAtual.addAll(this.configFaseAtual.carregarPersonagensIniciais());
 
-        // 2. Pega o *novo* Herói e injeta o estado salvo
+        // 2. Injeta o estado salvo no novo Herói
         Hero heroiNovo = getHero();
         if (heroiNovo != null) {
             heroiNovo.setMunicao(municaoCache);
             heroiNovo.setChaves(chavesCache);
         }
         
-        
         // Define o background
         this.backgroundTile = this.configFaseAtual.getBackgroundTile();
+        
+        
 
-        // --- LÓGICA DE MENSAGEM (A GRANDE MUDANÇA) ---
-
+        // Lógica de Mensagem Inicial/Vitória
         String msgParaMostrar = null;
 
-        // CASO 1: Estamos voltando ao Lobby (ID 0) vindo de uma fase (ID > 0)?
+        // Caso 1: Voltando ao Lobby após vitória
         if (this.idFaseAtual == 0 && idFaseAnterior > 0) {
-            // Sim! Busque a mensagem de VITÓRIA da fase ANTERIOR.
             IFase configFaseAntiga = gFase.getFase(idFaseAnterior);
             if(configFaseAntiga != null){
                 msgParaMostrar = configFaseAntiga.getMensagemVitoria();
             }
         } 
-        // CASO 2: Qualquer outra situação (Início do jogo, Lobby -> Fase, Fase -> Fase)
+        // Caso 2: Mensagem inicial da fase
         else {
-            // Apenas mostre a mensagem INICIAL da fase ATUAL.
             msgParaMostrar = this.configFaseAtual.getMensagemInicial();
         }
 
-        // Reseta a pontuação de coleta (lógica dos 3 itens)
+        // Reseta a pontuação de coleta
         this.itensColetados = 0;
         
         if (msgParaMostrar != null && !msgParaMostrar.isEmpty()) {
-            // O "true" garante que a mensagem pause o jogo (blocking)
             this.addPersonagem(new Mensagem(msgParaMostrar, true));
         }
     }
     
     public Hero getHero() {
         if (this.faseAtual.isEmpty() || !(this.faseAtual.get(0) instanceof Hero)) {
-            // Isso indica um problema sério no carregamento da fase
-            System.out.println("ERRO: Heroi nao e o primeiro elemento da fase!");
             return null; 
-            }
+        }
         return (Hero) this.faseAtual.get(0);
     }
     
@@ -230,26 +203,16 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     }
 
     public void addPersonagem(Personagem umPersonagem) {
-        // V-V-V- LÓGICA NOVA (O "PORTEIRO") V-V-V
-        if (umPersonagem instanceof Mensagem) {
-            Mensagem novaMsg = (Mensagem) umPersonagem;
-
-            // Se o jogo JÁ ESTÁ pausado por outra mensagem...
+        // Lógica do Porteiro para Mensagem (Pause)
+        if (umPersonagem instanceof Mensagem novaMsg) {
             if (this.isGamePaused) {
-                // ... IGNORAMOS a nova mensagem para evitar overlap.
                 System.out.println("WARN: Jogo pausado, mensagem nova ignorada: " + novaMsg.getTexto());
-                return; // Sai do método, não adiciona a mensagem
+                return;
             }
-
-            // Se o jogo NÃO está pausado, mas esta MENSAGEM quer pausar...
             if (novaMsg.isBlocking()) {
-                // ...nós ativamos a pausa AGORA.
                 this.setGamePaused(true);
             }
         }
-        // ^-^-^- FIM DA LÓGICA NOVA -^-^-^
-
-        // Adiciona o personagem (seja a msg ou qualquer outro)
         faseAtual.add(umPersonagem);
     }
 
@@ -266,13 +229,11 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         Graphics g = this.getBufferStrategy().getDrawGraphics();
         g2 = g.create(getInsets().left, getInsets().top, getWidth() - getInsets().right, getHeight() - getInsets().top);
         
-        /**
-         * *********** Desenha cenário de fundo (AGORA TEMÁTICO) *************
-         */
-        if (this.backgroundTile != null) { // Garante que o tile existe
+        // Desenha cenário de fundo
+        if (this.backgroundTile != null) {
             try {
                 Image newImage = Toolkit.getDefaultToolkit().getImage(
-                        new java.io.File(".").getCanonicalPath() + Consts.PATH + this.backgroundTile);
+                        new File(".").getCanonicalPath() + Consts.PATH + this.backgroundTile);
                 
                 for (int i = 0; i < Consts.RES; i++) {
                     for (int j = 0; j < Consts.RES; j++) {
@@ -282,155 +243,95 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                     }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(Tela.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Tela.class.getName()).log(Level.SEVERE, "Erro ao carregar tile de fundo.", ex);
             }
         }
         
-        // --- LÓGICA DE JOGO MODIFICADA ---
+        // --- LÓGICA DE JOGO ---
         if (!this.faseAtual.isEmpty()) {
 
-            // <<-- PASSO 1: ATUALIZAR LÓGICA (SEMPRE RODA) >>
-            // Esta chamada agora está FORA do 'if' de pausa
-            // e passa o estado de pausa para o controlador.
+            // PASSO 1: ATUALIZA LÓGICA
             this.cj.atualizarTudo(faseAtual, getHero(), this.isGamePaused);
             
-            // <<-- PASSO 2: PROCESSAR COLISÕES (SÓ RODA SE NÃO PAUSADO) >>
-            // Este 'if' agora protege apenas a lógica de jogo, não o timer.
+            // PASSO 2: PROCESSA COLISÕES (Só roda se NÃO pausado)
             if (!this.isGamePaused) {
                 
-                // Ambos para controlar o movimento do personagem
-                this.moveJaProcessadoNesteTick = false; // Reseta a trava
-                processarMovimentoHeroi(); // Processa o input do herói
+                processarMovimentoHeroi();
                 
                 String status = this.cj.processaTudo(faseAtual);
                 
                 // PASSO 3: AGIR DE ACORDO COM O STATUS
                 switch (status) {
-                    case "HERO_DIED":
-                        this.vidas--; // 1. Decrementa a vida
-                        
-                        
-                        
-                        // 3. Limpa a fase e o input
+                    case "HERO_DIED" -> {
+                        this.vidas--;
                         this.faseAtual.clear(); 
                         this.teclasPressionadas.clear();
 
                         if (this.vidas <= 0) {
-                            // --- Lógica de Game Over ---
+                            // Lógica de Game Over
                             System.out.println("GAME OVER!");
-                            
-                            // 4. Reseta os stats para um novo jogo
                             this.vidas = 10;
                             this.pontuacao = 0;
                             this.fasesConcluidas.clear();
-                            
-                            // 5. Recarrega o Lobby (Fase 0) PRIMEIRO
                             this.idFaseAtual = 0;
                             this.configFaseAtual = gFase.getFase(this.idFaseAtual);
                             if(this.configFaseAtual != null) { 
                                 this.backgroundTile = this.configFaseAtual.getBackgroundTile();
                                 this.faseAtual.addAll(this.configFaseAtual.carregarPersonagensIniciais());
                             }
-                            
-                            // 6. Reseta o Herói do Lobby (que agora está no índice 0)
                             Hero heroiNovoLobby = getHero();
                             if (heroiNovoLobby != null) {
                                 heroiNovoLobby.setMunicao(5);
                                 heroiNovoLobby.setChaves(0);
                             }
-
-                            // 7. Adiciona a mensagem de Game Over POR ÚLTIMO
                             addPersonagem(new Mensagem("GAME OVER", true)); 
-                            
                         } else {
-                            // --- Lógica de Perder Vida (mas não Game Over) ---
+                            // Lógica de Perder Vida (Recarregar fase)
                             System.out.println("Voce morreu! Vidas restantes: " + this.vidas);
-
-                            // 4. Recarrega a fase ATUAL PRIMEIRO
                             this.configFaseAtual = gFase.getFase(this.idFaseAtual);
                             if(this.configFaseAtual != null) { 
                                 this.backgroundTile = this.configFaseAtual.getBackgroundTile();
                                 this.faseAtual.addAll(this.configFaseAtual.carregarPersonagensIniciais());
                             }
-                            
-                            // 5. Restaura o estado do Herói (que agora está no índice 0)
                             Hero heroiNovoFase = getHero();
                             if (heroiNovoFase != null) {
-                                heroiNovoFase.setMunicao(5); // <<-- CORREÇÃO (Valor padrão)
-                                heroiNovoFase.setChaves(0);  // <<-- CORREÇÃO (Valor padrão)
+                                heroiNovoFase.setMunicao(5);
+                                heroiNovoFase.setChaves(0);
                             }
-                            
-                            // 6. Adiciona a mensagem de Morte POR ÚLTIMO
                             String msg = "Você morreu!\nVidas restantes: " + this.vidas;
                             addPersonagem(new Mensagem(msg, true)); 
                         }
-                        break;
+                    }
+                    case "ITEM_COLETADO" -> this.processarColeta();
+                    case "REJEITADO" -> getHero().voltaAUltimaPosicao();
                         
-                    case "ITEM_COLETADO":
-                        this.processarColeta(); // Lógica principal da fase (3 itens)
-                        break;
-
-                    // --- NOSSAS NOVAS MECÂNICAS ---
-                    case "REJEITADO":
-                        getHero().voltaAUltimaPosicao(); // Empurra o herói (porta/baú trancado)
-                        break;
-                        
-                    case "CHAVE_COLETADA":
-                        getHero().adicionarChave(); // Adiciona chave no "inventário"
+                    case "CHAVE_COLETADA" -> {
+                        getHero().adicionarChave();
                         this.pontuacao += 10;
-                        break;
+                    }
+                    case "BAU_ABERTO" -> processarAberturaBau();
                         
-                    case "BAU_ABERTO":
-                        processarAberturaBau(); // Roda a lógica de sorte/azar
-                        break;
+                    case "MUNICAO_COLETADA" -> {
+                        getHero().adicionarMunicao(5);
+                        this.pontuacao += 5;
+                    }
+                    case "PORTAL_FASE_0" -> this.iniciarFase(0);
+                    case "PORTAL_FASE_1" -> this.iniciarFase(1);
+                    case "PORTAL_FASE_2" -> this.iniciarFase(2);
+                    case "PORTAL_FASE_3" -> this.iniciarFase(3);
+                    case "PORTAL_FASE_4" -> this.iniciarFase(4);
+                    case "PORTAL_FASE_5" -> this.iniciarFase(5);
                         
-                    case "MUNICAO_COLETADA":
-                        getHero().adicionarMunicao(5); // Adiciona 5 balas
-                        this.pontuacao += 5; // Ganha 5 pontos
-                        break;
-
-                    // Lógica de Portais (do Lobby)
-                    case "PORTAL_FASE_0":
-                        this.iniciarFase(0); // Vai para o Lobby
-                        break;
-                    case "PORTAL_FASE_1":
-                        this.iniciarFase(1); // Vai para Fase 1
-                        break;
-                    case "PORTAL_FASE_2":
-                        this.iniciarFase(2); // Vai para Fase 2
-                        break;
-                    case "PORTAL_FASE_3":
-                        this.iniciarFase(3); // Vai para Fase 3
-                        break;
-                    case "PORTAL_FASE_4":
-                        this.iniciarFase(4); // Vai para Fase 4
-                        break;
-                    case "PORTAL_FASE_5":
-                        this.iniciarFase(5); // Vai para Fase 5
-                        break;
-                    
-                    case "FASE_CONCLUIDA": // Status do Portal de saída (destino 0)
-                        this.proximaFase();
-                        break;
-
-                    case "GAME_RUNNING":
-                        // Não faz nada, o jogo continua
-                        break;
-                } // Fim do switch(status)
-                
-            } // <--- Fim do "if (!this.isGamePaused)"
-            // -----------------------------------------------------------------
-            // FIM DA LÓGICA DE PAUSE
-            // -----------------------------------------------------------------
-            
+                    case "FASE_CONCLUIDA" -> this.proximaFase();
+                    case "GAME_RUNNING" -> {}
+                }
+            }
             
             // PASSO 4: DESENHAR TUDO
-            // O desenho ocorre MESMO SE ESTIVER PAUSADO.
-            // É isso que permite a Mensagem (bloqueante) aparecer!
             this.cj.desenharTudo(faseAtual);
             
             if (!this.isGamePaused) {
-                // Iteramos de trás para frente para remoção segura
+                // Remoção segura de personagens que não estão mais vivos
                 for (int i = faseAtual.size() - 1; i >= 0; i--) {
                     Personagem p = faseAtual.get(i);
                     if (!p.isVivo()) {
@@ -440,53 +341,29 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
             }
         }  
 
-        
-        // ==========================================================
-        // NOVO: Desenhando o HUD (Vidas e Pontos)
-        // ==========================================================
-        // Define a fonte e a cor
-        // --- LINHA 1: Vidas e Pontuação ---
-        
-        // Define a fonte e a cor
+        // Desenho do HUD (Vidas, Pontuação, Chaves e Munição)
         g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 20));
         g2.setColor(java.awt.Color.WHITE);
+        
+        // Linha 1: Pontuação
+        g2.drawString("Pontos: " + this.pontuacao, 430, 25);
 
-        // Desenha a Pontuação (no canto superior direito)
-        String textoPontos = "Pontos: " + this.pontuacao;
-        g2.drawString(textoPontos, 430, 25); // (Posição X, Y)
-
-        // Desenha as Vidas (no canto superior esquerdo)
+        // Linha 1: Vidas
         if (iCoracaoHUD != null) {
-            // Pega o tamanho do ícone que definimos no construtor
             int tamanhoIcone = iCoracaoHUD.getIconWidth();
-            int espacamento = 5; // Espaço entre os corações
-            
+            int espacamento = 5;
             for (int i = 0; i < this.vidas; i++) {
-                // Desenha um coração para cada vida, com espaçamento
                 iCoracaoHUD.paintIcon(this, g2, 10 + (i * (tamanhoIcone + espacamento)), 5);
             }
         }
         
-        // --- LINHA 2: Chaves e Munição ---
-        
-        // Vamos precisar do Herói para pegar os dados
+        // Linha 2: Chaves e Munição
         Hero h = getHero();
         if (h != null) {
-            // Posição Y da segunda linha (ex: 30 pixels abaixo da primeira)
-            int yLinha2 = 55; 
-            
-            // Desenha as Chaves (lado esquerdo)
-            // (Poderíamos carregar um ícone de chave, mas por ora texto é mais rápido)
-            String textoChaves = "Chaves: " + h.getNumChaves();
-            g2.drawString(textoChaves, 10, yLinha2);
-
-            // Desenha a Munição (lado direito)
-            String textoMunicao = "Munição: " + h.getNumMunicao();
-            g2.drawString(textoMunicao, 430, yLinha2);
+            int yLinha2 = 55;
+            g2.drawString("Chaves: " + h.getNumChaves(), 10, yLinha2);
+            g2.drawString("Munição: " + h.getNumMunicao(), 430, yLinha2);
         }
-        // ==========================================================
-        // FIM DO HUD
-        // ==========================================================
         
         g.dispose();
         g2.dispose();
@@ -495,24 +372,17 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         }
     }
 
-    /**
-     * NOVO MÉTODO:
-     * Implementa a lógica do brainstorm de 3 itens.
-     */
+    /** Implementa a lógica de coleta de 3 itens para progressão de fase. */
     private void processarColeta() {
-        this.pontuacao += 50; // Ganha pontos por item
+        this.pontuacao += 50;
         this.itensColetados++;
         System.out.println("Item coletado! Total: " + this.itensColetados);
 
-        if (this.itensColetados == 1) {
-            // Adiciona as barreiras
-            this.faseAtual.addAll(this.configFaseAtual.getPersonagensColeta_1());
-        } else if (this.itensColetados == 2) {
-            // Adiciona o "chefão"
-            this.faseAtual.addAll(this.configFaseAtual.getPersonagensColeta_2());
-        } else if (this.itensColetados == 3) {
-            // Adiciona o portal de saída
-            this.faseAtual.add(this.configFaseAtual.getPersonagemColeta_3());
+        switch (this.itensColetados) {
+            case 1 -> this.faseAtual.addAll(this.configFaseAtual.getPersonagensColeta_1());
+            case 2 -> this.faseAtual.addAll(this.configFaseAtual.getPersonagensColeta_2());
+            case 3 -> this.faseAtual.add(this.configFaseAtual.getPersonagemColeta_3());
+            default -> {}
         }
     }
 
@@ -526,6 +396,7 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
 
     public void go() {
         TimerTask task = new TimerTask() {
+            @Override
             public void run() {
                 repaint();
             }
@@ -534,52 +405,45 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         timer.schedule(task, 0, Consts.PERIOD);
     }
     
+    @Override
     public void keyPressed(KeyEvent e) {
         if (this.isGamePaused) {
-            return; // Ignora qualquer tecla se o jogo estiver pausado
+            return;
         }
         
         try {
-            // Verificar se uma determinada tecla continua presionada
+            // É usado no MODO CONSTRUTOR para faciliar colocar o mesmo elemento repetidas vezes
             if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
                 isControlPressed = true;
             }
-            // Se a tecla já está na lista de "pressionadas" (por ex, repeat do OS), ignore.
             if (teclasPressionadas.contains(e.getKeyCode()))
                     return;
 
-            // Modificação apra garantir que segurar a tecla de movimento funcione
             boolean isMoveKey = (e.getKeyCode() == KeyEvent.VK_UP ||
                                  e.getKeyCode() == KeyEvent.VK_DOWN ||
                                  e.getKeyCode() == KeyEvent.VK_LEFT ||
                                  e.getKeyCode() == KeyEvent.VK_RIGHT);
 
             if (isMoveKey) {
-                teclasPressionadas.add(e.getKeyCode()); // Adiciona ao "Hold"
-                teclasTap.add(e.getKeyCode());          // Adiciona ao "Tap"
+                teclasPressionadas.add(e.getKeyCode());
+                teclasTap.add(e.getKeyCode());
             }
+            // Entrar no MODO CONSTRUTOR
             else if (e.getKeyCode() == KeyEvent.VK_T) {
                 this.faseAtual.clear();
-                ArrayList<Personagem> novaFase = new ArrayList<Personagem>();
+                ArrayList<Personagem> novaFase = new ArrayList<>();
 
                 /*Cria faseAtual adiciona personagens*/
-                Hero novoHeroi = new Hero("Robbo.png", 10, 10);
+                Hero novoHeroi = new Hero("Heroi.png", 10, 10);
                 novaFase.add(novoHeroi);
-                this.atualizaCamera(); // Importante manter isso
-
-                ZigueZague zz = new ZigueZague("bomba.png", 0, 0);
-                novaFase.add(zz);
-
-                Esfera es = new Esfera("esfera.png", 4, 4);
-                novaFase.add(es);
+                this.atualizaCamera();
 
                 faseAtual = novaFase;
             }
             else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                 getHero().atacar();
             } else if (e.getKeyCode() == KeyEvent.VK_S) {
-                // --- CORREÇÃO SAVE ---
-                // 1. Cria o objeto de estado
+                // Salva o estado do jogo
                 SaveState save = new SaveState();
                 save.faseAtual = this.faseAtual;
                 save.idFaseAtual = this.idFaseAtual;
@@ -587,9 +451,8 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 save.pontuacao = this.pontuacao;
                 save.itensColetados = this.itensColetados;
                 save.fasesConcluidas = this.fasesConcluidas;
-                save.backgroundTile = this.backgroundTile; // Salva o background
+                save.backgroundTile = this.backgroundTile;
 
-                // 2. Serializa o objeto de estado
                 try (FileOutputStream fos = new FileOutputStream("POO.dat");
                      ObjectOutputStream serializador = new ObjectOutputStream(fos)) {
                     serializador.writeObject(save);
@@ -598,22 +461,23 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                     System.err.println("Erro ao salvar: " + ex.getMessage());
                 }
             } else if (e.getKeyCode() == KeyEvent.VK_L) {
+                // Carrega o estado do jogo
                 try (FileInputStream fis = new FileInputStream("POO.dat");
                      ObjectInputStream serializador = new ObjectInputStream(fis)) {
                     
-                    // 1. Lê o objeto de estado
                     SaveState save = (SaveState) serializador.readObject();
 
-                    // 2. Restaura TUDO
                     this.faseAtual = save.faseAtual;
                     this.idFaseAtual = save.idFaseAtual;
                     this.vidas = save.vidas;
                     this.pontuacao = save.pontuacao;
                     this.itensColetados = save.itensColetados;
-                    this.fasesConcluidas = save.fasesConcluidas;
-                    this.backgroundTile = save.backgroundTile; // Restaura o background
+               
+                    this.fasesConcluidas.clear();
+                    this.fasesConcluidas.addAll(save.fasesConcluidas);
+                    
+                    this.backgroundTile = save.backgroundTile;
 
-                    // 3. Atualiza a config da fase (importante!)
                     this.configFaseAtual = gFase.getFase(this.idFaseAtual);
                     
                     System.out.println("Jogo Carregado!");
@@ -621,71 +485,58 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
                 } catch (Exception ex) {
                     System.err.println("Erro ao carregar: " + ex.getMessage());
                 }
-            } else if (e.getKeyCode() == KeyEvent.VK_K) {
-                // CHEAT: Salva uma Caveira para teste de Drag-and-Drop
-                try (   FileOutputStream fos = new FileOutputStream("caveira.gz");
-                        GZIPOutputStream gzos = new GZIPOutputStream(fos);
-                        ObjectOutputStream oos = new ObjectOutputStream(gzos)) {
-
-                    Caveira c = new Caveira("caveira.png", 0, 0); // Posição não importa
-                    oos.writeObject(c);
-                    System.out.println("Arquivo 'caveira.gz' criado para teste!");
-
-                } catch (Exception ex) {
-                    System.err.println("Erro ao criar arquivo de teste: " + ex.getMessage());
-                }
-            }
+            // Salva elemento .gz para fazer Drag-and-Drop
+            } 
+            // Comandos do Editor de Mapas (Pincéis)
             else if (e.getKeyCode() == KeyEvent.VK_1) {
-                salvarPincelGZ(new Parede("ParedePedra.png", 0, 0), "pincel_parede");
+                System.out.println("Parede Pantano Adicionado em:");
+                salvarPincelGZ(new Parede("PantanoParede2.png", 0, 0), "PantanoParede");
             }
             else if (e.getKeyCode() == KeyEvent.VK_2) {
-                salvarPincelGZ(new ZigueZague("robo.png", 0, 0), "pincel_ziguezague");
+                System.out.println("Parede Caverna Adicionado em:");
+                salvarPincelGZ(new Parede("CavernaParede.png", 0, 0), "CavernaParede");
             }
             else if (e.getKeyCode() == KeyEvent.VK_3) {
-                salvarPincelGZ(new Jacare("chaser.png", 0, 0), "pincel_chaser");
+                System.out.println("Personagem Foguinho Adicionado em:");
+                salvarPincelGZ(new Hero("Heroi.png", 0, 0), "Heroi");
             }
             else if (e.getKeyCode() == KeyEvent.VK_4) {
-                // Atirador (Caveira) - AGORA COMPATÍVEL!
-                salvarPincelGZ(new Caveira("Capivara.png", 0, 0), "pincel_caveira");
+                System.out.println("Personagem Bau Adicionado em:");
+                salvarPincelGZ(new Bau("GeloMorsa.png", 0, 0), "pincel_caveira");
             }
             else if (e.getKeyCode() == KeyEvent.VK_5) {
-                // Item Coletável (o "coração")
-                salvarPincelGZ(new ItemChave("coracao.png", 0, 0), "pincel_itemchave");
+                System.out.println("Personagem ArtefatoFogo Adicionado em:");
+                salvarPincelGZ(new Artefato("GeloArtefato.png", 0, 0), "pincel_itemchave");
             }
             else if (e.getKeyCode() == KeyEvent.VK_6) {
-                // Portal (ex: para Fase 1)
-                Portal p = new Portal("esfera.png", 0, 0);
-                p.setDestinoFase(1); // Importante: configuramos o estado dele
+                Portal p = new Portal("ZPorta.png", 0, 0);
+                System.out.println("Personagem Portal Adicionado em:");
+                p.setDestinoFase(1);
                 salvarPincelGZ(p, "pincel_portal_fase1");
             }
             else if (e.getKeyCode() == KeyEvent.VK_7) {
-                // Chave (para baú/porta)
-                salvarPincelGZ(new Chave("coracao.png", 0, 0), "pincel_chave");
+                System.out.println("Personagem Chave Adicionado em:");
+                salvarPincelGZ(new Chave("ZChave.png", 0, 0), "pincel_chave");
             }
             else if (e.getKeyCode() == KeyEvent.VK_8) {
-                // Baú
-                salvarPincelGZ(new Bau("roboPink.png", 0, 0), "pincel_bau");
+                System.out.println("Personagem Bau Adicionado em:");
+                salvarPincelGZ(new Bau("ZBAu.png", 0, 0), "pincel_bau");
             }
-            else if (e.getKeyCode() == KeyEvent.VK_9) {
-                // Herói (para definir a posição inicial)
-                salvarPincelGZ(new Hero("Hero.png", 0, 0), "pincel_hero");
+            else if (e.getKeyCode() == KeyEvent.VK_C) {
+                // 'C' de Converter
+                System.out.println("Convertendo 'POO.dat' para código Java...");
+                this.converterSaveParaCodigo();
             }
-            
-            /* Também deve ser apagado pois é a movimentação antiga
-            this.atualizaCamera();
-            this.setTitle("-> Cell: " + (getHero().getPosicao().getLinha()) + ", " + (getHero().getPosicao().getColuna()));
-            */
-            
-            //repaint(); /*invoca o paint imediatamente, sem aguardar o refresh*/
         } catch (Exception ee) {
-
+            // Ignorado
         }
     }
+    
+    @Override
     public void keyReleased(KeyEvent e) {
-        // Refetene a tecla pressionada do modo construtor de mapas
         if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
             isControlPressed = false;
-            arquivoPincel = null; // Limpa o "pincel" quando soltar o Control
+            arquivoPincel = null;
         }
         teclasPressionadas.remove(e.getKeyCode());        
     }    
@@ -693,98 +544,73 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     @Override
     public void mousePressed(MouseEvent e) {
         if (this.isGamePaused) {
-            return; // Ignora clique do mouse se o jogo estiver pausado
+            return;
         }
         
-        // Se o botão esquerdo for pressionado E o modo pincel estiver ativo...
+        // Se Botão Esquerdo + CTRL, usa o Pincel (Editor)
         if (SwingUtilities.isLeftMouseButton(e) && isControlPressed && arquivoPincel != null) {
-            
-            // Pega o ponto exato do clique
             Point clickPoint = e.getPoint(); 
-            
-            // Já calcula a posição do grid e da câmera. Perfeito!
             adicionarPersonagemDoArquivo(this.arquivoPincel, clickPoint);
-            
-            repaint(); // Atualiza a tela
-            return;    // Consome o clique (não faz teleporte/nada mais)
+            repaint();
+            return;
         }    
         
-        // Calcula a posição no *GRID* (levando em conta a câmera)
+        // Calcula a posição no GRID
         int x = e.getX();
         int y = e.getY();
         int dropLinha = (y / Consts.CELL_SIDE) + getCameraLinha();
         int dropColuna = (x / Consts.CELL_SIDE) + getCameraColuna();
 
-        // --- LÓGICA DO EDITOR (Adicionada) ---
-
-        // BOTÃO DIREITO: Remover Personagem (Nossa "Borracha")
+        // BOTÃO DIREITO: Remover Personagem (Borracha do Editor)
         if (SwingUtilities.isRightMouseButton(e)) {
-            // Itera de trás para frente para remoção segura
             for (int i = faseAtual.size() - 1; i >= 0; i--) {
                 Personagem p = faseAtual.get(i);
-
-                // Verifica se a posição do personagem é a mesma do clique
                 if (p.getPosicao().getLinha() == dropLinha && p.getPosicao().getColuna() == dropColuna) {
-                    
-                    // REGRA DE SEGURANÇA: Nunca remova o Herói!
-                    // (Lembramos que o Herói é sempre o índice 0)
                     if (i == 0) {
                         System.out.println("Editor: Nao e possivel remover o Heroi!");
-                        continue; // Procura se há algo *embaixo* do herói
+                        continue;
                     }
-                    
-                    // Remove o personagem da lista
                     faseAtual.remove(i);
                     System.out.println("Editor: Item removido em " + dropLinha + "," + dropColuna);
-                    repaint(); // Atualiza a tela imediatamente
-                    return; // Sai do método (remove apenas 1 item por clique)
+                    repaint();
+                    return;
                 }
             }
         } 
         
-        // BOTÃO ESQUERDO: Teleportar Herói (Modo "Cheat" que você já tinha)
+        // BOTÃO ESQUERDO: Teleportar Herói
         else if (SwingUtilities.isLeftMouseButton(e)) {
             this.setTitle("X: " + x + ", Y: " + y
-                    + " -> Cell: " + (y / Consts.CELL_SIDE) + ", " + (x / Consts.CELL_SIDE));
+                    + " -> Celula: " + (y / Consts.CELL_SIDE) + ", " + (x / Consts.CELL_SIDE));
             
-            // Sua lógica original de teleporte
             this.getHero().getPosicao().setPosicao(dropLinha, dropColuna);
             
             repaint();
         }
     }
     
-    /**
-     * Controla a lógica de "Sorte ou Azar" do baú de bônus.
-     */
+    /** Controla a lógica de "Sorte ou Azar" do baú de bônus. */
     private void processarAberturaBau() {
         Random rand = new Random();
-        int sorte = rand.nextInt(100); // Sorteia um número de 0 a 99
+        int sorte = rand.nextInt(100);
 
-        if (sorte < 20) { // 20% de chance
-            // Recompensa: Ganhar munição
-            getHero().adicionarMunicao(10); // Usa o método que já existe no Hero
-            addPersonagem(new Mensagem("Um Pente de Balas!\nVocê ganhou 10 munições!", true));
-
-        } else if (sorte < 60) { // 40% de chance (de 20 a 59)
-            // Recompensa Ótima: Vida Extra!
+        if (sorte < 20) { // 20% de chance: Munição
+            getHero().adicionarMunicao(10);
+            addPersonagem(new Mensagem("Maravilha!\nVocê ganhou 10 munições!", true));
+        } else if (sorte < 60) { // 40% de chance: Vida Extra
             this.vidas++;
             addPersonagem(new Mensagem("Uma Poção Mágica!\nVocê recuperou uma vida!", true));
-
-        } else if (sorte < 90) { // 30% de chance (de 60 a 89)
-            // Recompensa Boa: Pontos!
+        } else if (sorte < 90) { // 30% de chance: Pontos
             this.pontuacao += 200;
             addPersonagem(new Mensagem("Um Tesouro!\n+200 Pontos!", true));
-            
-        } else { // 10% de chance (de 90 a 99)
-            // Piada (Azar, mas sem punição)
+        } else { // 10% de chance: Nada
             addPersonagem(new Mensagem("O baú estava vazio...\n...exceto por esta aranha\ninofensiva. Que chato.", true));
         }
     }
     
     public boolean isGamePaused() {
-    return this.isGamePaused;
-}
+        return this.isGamePaused;
+    }
 
     public void setGamePaused(boolean paused) {
         this.isGamePaused = paused;
@@ -792,36 +618,22 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     
     public void reiniciarFase() {
         System.out.println("Voce morreu! Vidas restantes: " + this.vidas);
-        this.iniciarFase(this.idFaseAtual); //
+        this.iniciarFase(this.idFaseAtual);
     }
     
     public void proximaFase() {
         this.pontuacao += 100;
         System.out.println("Passou de fase! Pontos: " + this.pontuacao);
         
-        if (this.idFaseAtual >= 1 && this.idFaseAtual <= 4) { // <-- MUDOU
-            this.fasesConcluidas.add(this.idFaseAtual); // <-- MUDOU
+        if (this.idFaseAtual >= 1 && this.idFaseAtual <= 4) {
+            this.fasesConcluidas.add(this.idFaseAtual);
             System.out.println("Fases Concluidas: " + this.fasesConcluidas.toString());
             this.iniciarFase(0);
-        } 
-
-        // Outros casos (Lobby 0, Créditos 6) reiniciam o jogo
-        else {
-            this.iniciarFase(0); 
+        } else {
+            this.iniciarFase(0);
         }
     }
     
-    // SUBSTITUIR gameOver()
-    public void gameOver() {
-        System.out.println("GAME OVER!");
-        // Reinicia o jogo do zero (volta ao Lobby)
-        this.vidas = 10;
-        this.pontuacao = 0;
-        this.iniciarFase(0);
-    }
-    
-
-
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -847,112 +659,72 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
 
-    public void mouseMoved(MouseEvent e) {
-    }
+// Implementações de Interface (Deixadas vazias, mas necessárias)
+    @Override public void mouseClicked(MouseEvent e) { }
+    @Override public void mouseReleased(MouseEvent e) { }
+    @Override public void mouseEntered(MouseEvent e) { }
+    @Override public void mouseExited(MouseEvent e) { }
+    @Override public void keyTyped(KeyEvent e) { }
 
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mouseDragged(MouseEvent e) {
-    }
-
-    public void keyTyped(KeyEvent e) {
-    }
-
-    /**
-     * Classe interna que agrupa todos os dados
-     * necessários para um Save/Load completo.
-     * Ela precisa ser Serializable.
-     */
-    private static class SaveState implements java.io.Serializable {
-        // Precisamos salvar TUDO que define o estado do jogo
-        
+    /** Classe interna para Serialização do estado do jogo (Save/Load). */
+    public static class SaveState implements java.io.Serializable {
+        private static final long serialVersionUID = 1L;
         public ArrayList<Personagem> faseAtual;
         public int idFaseAtual;
         public int vidas;
         public int pontuacao;
         public int itensColetados;
-        public java.util.Set<Integer> fasesConcluidas;
-        
-        // Adicionado para corrigir o bug do background
+        public Set<Integer> fasesConcluidas;
         public String backgroundTile; 
     }
     
     
     // ---------------------------------------------------------------- //
-    // MÉTODOS DO REQUISITO 6 (DRAG-AND-DROP)
+    // MÉTODOS DE DRAG-AND-DROP (EDITOR DE MAPAS)
     // ---------------------------------------------------------------- //
 
     @Override
     public void drop(DropTargetDropEvent e) {
         try {
-            // Aceita o "drop"
             e.acceptDrop(DnDConstants.ACTION_COPY);
-            
-            // Pega os dados que foram soltos
             Transferable transferable = e.getTransferable();
             
-            // Verifica se são arquivos
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                
-                // Pega a posição do mouse (relativa ao painel do jogo)
                 Point dropPoint = e.getLocation();
-
-                // Converte a lista de dados para uma Lista de Arquivos
                 List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
                 
-                // Processa cada arquivo solto
                 for (File file : files) {
                     System.out.println("Arquivo solto: " + file.getName());
                     
-                    // Se o Control estiver pressionado, define este arquivo como pincel
-                    // Necessario para nao ficar arratanso cada elemtno serializado
                     if (isControlPressed) {
                         this.arquivoPincel = file;
                         System.out.println("Modo Pincel ATIVADO com: " + file.getName());
                     }
                     
-                    // Verifica se é um .gz (como sugere o PDF e o GZIPInputStream)
                     if (file.getName().toLowerCase().endsWith(".gz")) {
                         adicionarPersonagemDoArquivo(file, dropPoint);
                     }
                 }
             }
             e.dropComplete(true);
-        } catch (Exception ex) {
+        } catch (UnsupportedFlavorException | IOException ex) {
             System.err.println("Erro no Drop: " + ex.getMessage());
-            ex.printStackTrace();
             e.dropComplete(false);
         }
     }
 
     private void adicionarPersonagemDoArquivo(File file, Point dropPoint) {
-        try (   FileInputStream fis = new FileInputStream(file);
-                GZIPInputStream gzis = new GZIPInputStream(fis);
-                ObjectInputStream ois = new ObjectInputStream(gzis)) {
+        try (FileInputStream fis = new FileInputStream(file);
+             GZIPInputStream gzis = new GZIPInputStream(fis);
+             ObjectInputStream ois = new ObjectInputStream(gzis)) {
 
-            // Lê e desserializa o objeto Personagem do arquivo
             Personagem pNovo = (Personagem) ois.readObject();
 
-            // Calcula a posição no *GRID* (levando em conta a câmera)
-            // (Esta é a lógica correta que também devemos aplicar ao mousePressed)
             int dropLinha = (dropPoint.y / Consts.CELL_SIDE) + getCameraLinha();
             int dropColuna = (dropPoint.x / Consts.CELL_SIDE) + getCameraColuna();
 
-            // Define a nova posição do personagem
             pNovo.setPosicao(dropLinha, dropColuna);
             
-            // Adiciona o personagem à fase atual
             this.faseAtual.add(pNovo);
             System.out.println("Adicionado: " + pNovo.getClass().getSimpleName() + " em " + dropLinha + "," + dropColuna);
 
@@ -961,39 +733,29 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         }
     }
 
-    // Métodos obrigatórios do DropTargetListener que não usaremos, mas precisam existir.
-    @Override
-    public void dragEnter(DropTargetDragEvent e) {
-         // Aceita apenas arquivos
+    // Métodos obrigatórios de DropTargetListener
+    @Override public void dragEnter(DropTargetDragEvent e) {
         if (e.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             e.acceptDrag(DnDConstants.ACTION_COPY);
         } else {
             e.rejectDrag();
         }
     }
-    @Override
-    public void dragOver(DropTargetDragEvent e) { } // Não precisa
-    @Override
-    public void dropActionChanged(DropTargetDragEvent e) { } // Não precisa
-    @Override
-    public void dragExit(DropTargetEvent e) { } // Não precisa
+    @Override public void dragOver(DropTargetDragEvent e) { }
+    @Override public void dropActionChanged(DropTargetDragEvent e) { }
+    @Override public void dragExit(DropTargetEvent e) { }
     
     // ---------------------------------------------------------------- //
     // FIM DOS MÉTODOS DE DRAG-AND-DROP
     // ---------------------------------------------------------------- //
     
-    /**
-     * Método auxiliar para criar um "pincel" serializado .gz de um personagem.
-     * @param p O Personagem (ex: new Parede(...))
-     * @param nomeArquivo O nome do arquivo (sem a extensão .gz)
-     */
+    /** Método auxiliar para criar um "pincel" serializado .gz de um personagem (Editor). */
     private void salvarPincelGZ(Personagem p, String nomeArquivo) {
-        // Usamos try-with-resources para fechar os streams automaticamente
         try (FileOutputStream fos = new FileOutputStream(nomeArquivo + ".gz");
              GZIPOutputStream gzos = new GZIPOutputStream(fos);
              ObjectOutputStream oos = new ObjectOutputStream(gzos)) {
             
-            oos.writeObject(p); // Serializa o objeto
+            oos.writeObject(p);
             System.out.println(">>> PINCEL CRIADO: " + nomeArquivo + ".gz");
 
         } catch (Exception ex) {
@@ -1001,64 +763,113 @@ public class Tela extends javax.swing.JFrame implements MouseListener, KeyListen
         }
     }
     
-     /*
-     * NOVO MÉTODO:
-     * Processa o input de movimento do Herói com um cooldown.
-     * Chamado a cada "tick" do jogo pelo método paint().
-     */
+    /** Processa o input de movimento do Herói com um cooldown (chamado a cada "tick"). */
     private void processarMovimentoHeroi() {
         boolean moveu = false;
 
-        // 1. PRIORIDADE ALTA: Processar "Taps"
-        // Verificamos se há um "tap" registrado.
+        // 1. Prioridade Alta: Processar "Taps" (clique rápido)
         if (!teclasTap.isEmpty()) {
-            if (teclasTap.contains(KeyEvent.VK_UP)) {
-                getHero().moveUp();
-                moveu = true;
-            } else if (teclasTap.contains(KeyEvent.VK_DOWN)) {
-                getHero().moveDown();
-                moveu = true;
-            } else if (teclasTap.contains(KeyEvent.VK_LEFT)) {
-                getHero().moveLeft();
-                moveu = true;
-            } else if (teclasTap.contains(KeyEvent.VK_RIGHT)) {
-                getHero().moveRight();
-                moveu = true;
-            }
-
-            // Limpamos a lista de taps, pois já os processamos.
+            if (teclasTap.contains(KeyEvent.VK_UP)) { getHero().moveUp(); moveu = true; } 
+            else if (teclasTap.contains(KeyEvent.VK_DOWN)) { getHero().moveDown(); moveu = true; } 
+            else if (teclasTap.contains(KeyEvent.VK_LEFT)) { getHero().moveLeft(); moveu = true; } 
+            else if (teclasTap.contains(KeyEvent.VK_RIGHT)) { getHero().moveRight(); moveu = true; }
             teclasTap.clear();
         }
 
-        // 2. PRIORIDADE BAIXA: Processar "Holds"
-        // Só processamos "hold" (segurar) se não houver um "tap"
-        // e se o cooldown estiver zerado.
+        // 2. Prioridade Baixa: Processar "Holds" (segurar) com cooldown
         else if (this.heroMoveCooldown == 0) {
-            if (teclasPressionadas.contains(KeyEvent.VK_UP)) {
-                getHero().moveUp();
-                moveu = true;
-            } else if (teclasPressionadas.contains(KeyEvent.VK_DOWN)) {
-                getHero().moveDown();
-                moveu = true;
-            } else if (teclasPressionadas.contains(KeyEvent.VK_LEFT)) {
-                getHero().moveLeft();
-                moveu = true;
-            } else if (teclasPressionadas.contains(KeyEvent.VK_RIGHT)) {
-                getHero().moveRight();
-                moveu = true;
-            }
+            if (teclasPressionadas.contains(KeyEvent.VK_UP)) { getHero().moveUp(); moveu = true; } 
+            else if (teclasPressionadas.contains(KeyEvent.VK_DOWN)) { getHero().moveDown(); moveu = true; } 
+            else if (teclasPressionadas.contains(KeyEvent.VK_LEFT)) { getHero().moveLeft(); moveu = true; } 
+            else if (teclasPressionadas.contains(KeyEvent.VK_RIGHT)) { getHero().moveRight(); moveu = true; }
         }
-        // 3. LÓGICA DE COOLDOWN
-        // Se o herói se moveu (seja por tap ou hold), resetamos o cooldown
+        
+        // 3. Lógica de Cooldown
         if (moveu) {
-            this.heroMoveCooldown = HERO_MOVE_DELAY; // Reseta o timer
+            this.heroMoveCooldown = HERO_MOVE_DELAY;
             this.atualizaCamera();
-            this.setTitle("-> Cell: " + (getHero().getPosicao().getLinha()) + ", " + (getHero().getPosicao().getColuna()));
+            this.setTitle("-> Celula: " + (getHero().getPosicao().getLinha()) + ", " + (getHero().getPosicao().getColuna()));
         } 
-        // Se o herói não se moveu, mas o cooldown estava ativo, o decrementamos
         else if (this.heroMoveCooldown > 0) {
             this.heroMoveCooldown--;
         }
     }
+    
+    private void converterSaveParaCodigo() {
+        // 1. Carrega o ArrayList<Personagem> do arquivo de save
+        ArrayList<Personagem> faseSalva;
+        try (FileInputStream fis = new FileInputStream("POO.dat");
+            ObjectInputStream serializador = new ObjectInputStream(fis)) {
+            
+            SaveState save = (SaveState) serializador.readObject();
+            faseSalva = save.faseAtual;
+            
+        } catch (Exception ex) {
+            System.err.println("Erro ao carregar 'POO.dat' para conversão: " + ex.getMessage());
+            return;
+        }
 
+        if (faseSalva == null || faseSalva.isEmpty()) {
+            System.err.println("Arquivo 'POO.dat' está vazio ou corrupto.");
+            return;
+        }
+
+        // 2. Prepara para imprimir o código
+        System.out.println("=========================================================");
+        System.out.println("// --- INÍCIO DO CÓDIGO DA FASE (Copie e cole isso) ---");
+        System.out.println("ArrayList<Personagem> fase = new ArrayList<>();");
+        System.out.println("");
+        
+        // Trata o Herói (Índice 0)
+        Personagem hero = faseSalva.get(0);
+        System.out.println("// 1. Adiciona o Herói (posição inicial)");
+        System.out.println("fase.add('Heroi.png', " 
+                + hero.getPosicao().getLinha() + ", " 
+                + hero.getPosicao().getColuna() + "));");
+        System.out.println("");
+        System.out.println("// 2. Adiciona os outros elementos da fase");
+
+        // 3. Itera e identifica cada Personagem (pulando o Herói no índice 0)
+        for (int i = 1; i < faseSalva.size(); i++) {
+            Personagem p = faseSalva.get(i);
+            int L = p.getPosicao().getLinha(); // Linha
+            int C = p.getPosicao().getColuna(); // Coluna
+            
+            String linhaCodigo = "// Classe desconhecida: " + p.getClass().getSimpleName();
+
+            // Este 'if-else if' é o núcleo da ferramenta.
+            // Ele associa a CLASSE do objeto ao código-fonte para criá-lo.
+            
+            // ATENÇÃO: Os nomes das imagens (ex: "FogoParede.png") estão
+            // baseados no seu código de 'keyPressed'. Ajuste se necessário.
+            
+            if (p instanceof Parede) {
+                // Assume que Parede usa "FogoParede.png" ou "FogoPiso1.png"
+                // Você pode precisar diferenciar, mas por enquanto:
+                linhaCodigo = "fase.add(new Parede(\"FogoParede.png\", " + L + ", " + C + ")); // ou FogoPiso1.png";
+            }
+            else if (p instanceof Bau) {
+                linhaCodigo = "fase.add(new Bau(\"ZBau.png\", " + L + ", " + C + "));";
+            }
+            else if (p instanceof Artefato) {
+                linhaCodigo = "fase.add(new ItemChave(\"FogoArtefato.png\", " + L + ", " + C + "));";
+            }
+            else if (p instanceof Portal p_portal) { // Usa 'pattern matching'
+                linhaCodigo = "Portal p" + i + " = new Portal(\"ZPortaLobby.png\", " + L + ", " + C + ");\n";
+                linhaCodigo += "        p" + i + ".setDestinoFase(" + p_portal.getDestinoFase() + "); // <-- Verifique o destino!\n";
+                linhaCodigo += "        fase.add(p" + i + ");";
+            }
+            else if (p instanceof Chave) {
+                linhaCodigo = "fase.add(new Chave(\"ZChave.png\", " + L + ", " + C + "));";
+            }
+            // ... etc ...
+            
+            System.out.println("        " + linhaCodigo);
+        }
+
+        System.out.println("");
+        System.out.println("return fase;");
+        System.out.println("// --- FIM DO CÓDIGO DA FASE ---");
+        System.out.println("=========================================================");
+    }
 }

@@ -19,27 +19,39 @@ public class CreditosFinais implements IFase {
         ArrayList<Personagem> fase = new ArrayList<>();
 
         // 1. Adiciona o Herói (obrigatório para a fase funcionar)
-        fase.add(new Hero(getHeroSkin(), 7, 7)); // Posição central
+        fase.add(new Hero("Heroi.png", 4, 4)); // Posição central
 
-        // 2. Adiciona as Mensagens (NÃO-BLOQUEANTES) - CORRIGIDO
+        // 2. Adiciona as Mensagens (NÃO-BLOQUEANTES)
         // O 'false' no construtor da Mensagem é a chave!
-        fase.add(new Mensagem("Criado por:", false));
-        fase.add(new Mensagem("Felipe Maia", false));
-        fase.add(new Mensagem("E a IA Dupla :D", false));
-
+        fase.add(new Mensagem("Criado por:\nFelipe Machuca\nFelipe Maia\nMatheus Gaubeur\nRafael Borges Brosco", false));
+        
         // 3. Adiciona o Portal de volta ao Lobby
-        Portal portalLobby = new Portal("esfera.png", 14, 1); // Canto inferior esquerdo
+        Portal portalLobby = new Portal("ZPortaFinal.png", 10, 10); // Canto inferior direito
         portalLobby.setDestinoFase(0); // 0 = Lobby
         fase.add(portalLobby);
 
         // 4. Adiciona as Paredes (Bordas)
-        for (int i = 0; i < 16; i++) {
-            fase.add(new Parede("bricks.png", 0, i)); // Usando bricks
-            fase.add(new Parede("bricks.png", 15, i));
+        for (int i = 0; i < 12; i++) {
+            fase.add(new Parede("ZPisoPreto.png", 0, i));
+            fase.add(new Parede("ZPisoPreto.png", 11, i));
         }
-        for (int i = 1; i < 15; i++) {
-            fase.add(new Parede("bricks.png", i, 0));
-            fase.add(new Parede("bricks.png", i, 15));
+        for (int i = 1; i < 11; i++) {
+            fase.add(new Parede("ZPisoPreto.png", i, 0));
+            fase.add(new Parede("ZPisoPreto.png", i, 11));
+        }
+        
+        // 5. Completa a área externa com tiles pretos
+        for (int i = 0; i < 12; i++) {
+            fase.add(new Parede("ZPisoPreto.png", 12, i));
+            fase.add(new Parede("ZPisoPreto.png", 13, i));
+            fase.add(new Parede("ZPisoPreto.png", 14, i));
+            fase.add(new Parede("ZPisoPreto.png", 15, i));
+        }
+        for (int i = 0; i < 16; i++) {
+            fase.add(new Parede("ZPisoPreto.png", i, 12));
+            fase.add(new Parede("ZPisoPreto.png", i, 13));
+            fase.add(new Parede("ZPisoPreto.png", i, 14));
+            fase.add(new Parede("ZPisoPreto.png", i, 15));
         }
 
         return fase;
@@ -47,7 +59,7 @@ public class CreditosFinais implements IFase {
 
     @Override
     public String getMensagemInicial() {
-        // Esta mensagem SIM, vai pausar o jogo (Bug 1 corrigido)
+        // Esta mensagem SIM, vai pausar o jogo
         return "PARABENS! VOCE ZEROU O JOGO!";
     }
 
@@ -70,12 +82,7 @@ public class CreditosFinais implements IFase {
 
     @Override
     public String getBackgroundTile() {
-        return "blackTile.png"; // Fundo preto para os créditos
-    }
-
-    @Override
-    public String getHeroSkin() {
-        return "Hero.png"; // Skin padrão
+        return "ZPisoCreditos.png";
     }
 
     @Override

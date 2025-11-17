@@ -1,13 +1,11 @@
 package Modelo;
-import Auxiliar.Desenho;
+import java.io.Serializable;
 
-public class Bau extends Personagem {
+public class Bau extends Personagem implements Serializable {
+    private static final long serialVersionUID = 1L;
     public Bau(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        
-        // V-V-V MUDANÇA CRÍTICA V-V-V
         this.bTransponivel = true; // DEVE ser transponível para a colisão ser processada
-        // ^-^-^ FIM DA MUDANÇA ^-^-^
     }
 
     @Override public void atualizar(java.util.ArrayList<Personagem> faseAtual, Hero hero) {}
@@ -16,12 +14,10 @@ public class Bau extends Personagem {
     public String aoColidirComHeroi(Hero h) {
         if (h.temChave()) {
             h.usarChave(); 
-            return "BAU_ABERTO"; // Sucesso! Sorteio rola.
+            return "BAU_ABERTO"; // Chama o sorteio
         }
         
-        // V-V-V MUDANÇA CRÍTICA V-V-V
-        // Não tem chave? Aja como uma parede e "empurre" o herói
+        // Não tem chave
         return "REJEITADO";
-        // ^-^-^ FIM DA MUDANÇA ^-^-^
     }
 }

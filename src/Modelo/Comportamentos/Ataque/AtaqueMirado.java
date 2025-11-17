@@ -2,23 +2,20 @@ package Modelo.Comportamentos.Ataque;
 
 import Modelo.Hero;
 import Modelo.Personagem;
-import Modelo.ProjetilMirado; // <<-- IMPORTAMOS O PROJÉTIL NOVO
+import Modelo.Comportamentos.Projeteis.ProjetilMirado;
 import Auxiliar.Desenho;
-import auxiliar.Posicao; // <<-- IMPORTAR
+import Auxiliar.Posicao;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia de Ataque (Padrão Strategy) que dispara um projétil
- * mirado na direção do Herói.
- */
-public class AtaqueMirado implements ComportamentoAtaque {
-
+//Estratégia de Ataque mirado na direção do Herói.
+public class AtaqueMirado implements Serializable, ComportamentoAtaque {
+    private static final long serialVersionUID = 1L;
     private int contador = 0;
     
     // Cooldown do ataque
-    private static final int INTERVALO = 30; 
-    
-    private String nomeImagemProjetil;
+    private static final int INTERVALO = 30;    
+    private final String nomeImagemProjetil;
 
     public AtaqueMirado(String sNomeImagePNG) {
         this.nomeImagemProjetil = sNomeImagePNG;
@@ -33,15 +30,14 @@ public class AtaqueMirado implements ComportamentoAtaque {
         }
         contador = 0; // Reseta o timer
 
-        // 2. VERIFICAÇÃO CRUCIAL
-        // Se o herói não existir (por algum motivo), não faz nada.
+        // 2. Se o herói não existir (por algum motivo), não faz nada.
         if (hero == null) {
             return; 
         }
 
         // 3. Pega as posições
         Posicao posAtirador = p.getPosicao();
-        Posicao posHeroi = hero.getPosicao(); // <<-- AQUI ESTÁ O ALVO!
+        Posicao posHeroi = hero.getPosicao();
 
         // 4. Cria o Projétil Mirado, passando as duas posições
         Personagem proj = new ProjetilMirado(

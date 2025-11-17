@@ -2,18 +2,16 @@ package Modelo.Comportamentos.Movimento;
 
 import Modelo.Hero;
 import Modelo.Personagem;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia (Padrão Strategy) que implementa a lógica de movimento
- * "Vai e Vem Horizontal" (esquerda-direita).
- * Esta classe agora contém a lógica de timer E a lógica de direção.
- */
-public class MovimentoVaiVemHorizontal implements ComportamentoMovimento {
+//Vai e Vem Horizontal (esquerda-direita).
+public class MovimentoVaiVemHorizontal implements Serializable, ComportamentoMovimento {
+    private static final long serialVersionUID = 1L;
 
     private boolean bRight;
     private int contadorDeFrames;
-    private int velocidade;
+    private final int velocidade;
 
     public MovimentoVaiVemHorizontal(int velocidade) {
         this.velocidade = velocidade;
@@ -21,9 +19,6 @@ public class MovimentoVaiVemHorizontal implements ComportamentoMovimento {
         this.bRight = true; // Começa indo para a direita
     }
 
-    /**
-     * Este é o "QUANDO" (a lógica do timer que estava em InimigoPatrulha)
-     */
     @Override
     public void executar(Personagem p, ArrayList<Personagem> faseAtual, Hero hero) {
         if (contadorDeFrames == velocidade) {
@@ -34,9 +29,6 @@ public class MovimentoVaiVemHorizontal implements ComportamentoMovimento {
         contadorDeFrames++;
     }
 
-    /**
-     * Este é o "O QUÊ" (a lógica que estava em BichinhoVaiVemHorizontal)
-     */
     private void proximoMovimento(Personagem p) {
         if (bRight) {
             p.moveRight();

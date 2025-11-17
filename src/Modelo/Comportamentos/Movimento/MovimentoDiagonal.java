@@ -2,13 +2,12 @@ package Modelo.Comportamentos.Movimento;
 
 import Modelo.Hero;
 import Modelo.Personagem;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia (Padrão Strategy) que implementa a lógica de movimento
- * diagonal (bate-volta).
- */
-public class MovimentoDiagonal implements ComportamentoMovimento {
+// Diagonal (bate-volta).
+public class MovimentoDiagonal implements Serializable, ComportamentoMovimento {
+    private static final long serialVersionUID = 1L;
 
     private boolean bCima;
     private boolean bDireita;
@@ -22,9 +21,6 @@ public class MovimentoDiagonal implements ComportamentoMovimento {
         this.bDireita = true;
     }
 
-    /**
-     * O "QUANDO" (a lógica do timer)
-     */
     @Override
     public void executar(Personagem p, ArrayList<Personagem> faseAtual, Hero hero) {
         if (contadorDeFrames == velocidade) {
@@ -35,9 +31,6 @@ public class MovimentoDiagonal implements ComportamentoMovimento {
         contadorDeFrames++;
     }
 
-    /**
-     * O "O QUÊ" (a lógica que estava em InimigoDiagonal)
-     */
     private void proximoMovimento(Personagem p) {
         boolean moveuVertical = false;
         boolean moveuHorizontal = false;

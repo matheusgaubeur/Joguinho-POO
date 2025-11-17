@@ -1,6 +1,9 @@
 package Modelo;
 
-public class Chave extends Personagem {
+import java.io.Serializable;
+
+public class Chave extends Personagem implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     public Chave(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);

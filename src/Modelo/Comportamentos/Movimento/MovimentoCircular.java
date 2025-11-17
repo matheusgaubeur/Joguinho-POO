@@ -3,13 +3,11 @@ package Modelo.Comportamentos.Movimento;
 import Modelo.Hero;
 import Modelo.Personagem;
 import java.util.ArrayList;
-import java.io.Serializable; // <<-- IMPORTANTE (Estratégias devem ser serializáveis)
+import java.io.Serializable;
 
-/**
- * Estratégia (Padrão Strategy) que implementa a lógica de movimento
- * Circular (Horário), que vira ao bater na parede.
- */
-public class MovimentoCircular implements ComportamentoMovimento {
+//Circular (Horário), que vira ao bater na parede.
+public class MovimentoCircular implements Serializable, ComportamentoMovimento {
+    private static final long serialVersionUID = 1L;
 
     // 0: Direita, 1: Baixo, 2: Esquerda, 3: Cima
     private int direcaoAtual; 
@@ -22,9 +20,6 @@ public class MovimentoCircular implements ComportamentoMovimento {
         this.direcaoAtual = 0; // Começa movendo para a Direita
     }
 
-    /**
-     * O "QUANDO" (a lógica do timer que estava em InimigoPatrulha)
-     */
     @Override
     public void executar(Personagem p, ArrayList<Personagem> faseAtual, Hero hero) {
         if (contadorDeFrames == velocidade) {
@@ -35,24 +30,20 @@ public class MovimentoCircular implements ComportamentoMovimento {
         contadorDeFrames++;
     }
 
-    /**
-     * O "O QUÊ" (a lógica que estava em InimigoCircular.java)
-     * Tenta mover; se bater, vira 90 graus no sentido horário.
-     */
     private void proximoMovimento(Personagem p) {
         boolean moveu = false;
         
         // Tenta mover na direção atual
         switch (direcaoAtual) {
-            case 0: moveu = p.moveRight(); break;
-            case 1: moveu = p.moveDown(); break;
-            case 2: moveu = p.moveLeft(); break;
-            case 3: moveu = p.moveUp(); break;
+            case 0 -> moveu = p.moveRight();
+            case 1 -> moveu = p.moveDown();
+            case 2 -> moveu = p.moveLeft();
+            case 3 -> moveu = p.moveUp();
         }
 
-        // Se não moveu (bateu na parede), vira 90 graus (próxima direção)
+        // Se não moveu (bateu na parede), vira para a próxima direção
         if (!moveu) {
-            direcaoAtual = (direcaoAtual + 1) % 4; // (0->1, 1->2, 2->3, 3->0)
+            direcaoAtual = (direcaoAtual + 1) % 4;
         }
     }
 }

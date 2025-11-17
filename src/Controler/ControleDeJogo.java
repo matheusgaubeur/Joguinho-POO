@@ -1,25 +1,18 @@
 package Controler;
 
-import Modelo.Chaser;
 import Modelo.Personagem;
 import Modelo.Hero;
-import Modelo.Mortal;
-import Modelo.Coletavel;
-import Modelo.Esfera;
-import auxiliar.Posicao;
+import Auxiliar.Posicao;
 import java.util.ArrayList;
 
 public class ControleDeJogo {
     
-// <<-- MUDANÇA: Renomeado para "desenharTudo"
     public void desenharTudo(ArrayList<Personagem> e) {
         for (int i = 0; i < e.size(); i++)
-            e.get(i).desenhar(); // <<-- MUDANÇA: Chamando o novo método desenhar()
+            e.get(i).desenhar(); //
     }
     
     public void atualizarTudo(ArrayList<Personagem> umaFase, Hero hero, boolean isGamePaused) {
-        // (Note que o Heroi não precisa de um 'atualizar' proativo, 
-        // mas alguns personagens, como o Chaser, precisam saber onde ele está)
         for (int i = 0; i < umaFase.size(); i++) {
             Personagem p = umaFase.get(i); 
 
@@ -36,13 +29,10 @@ public class ControleDeJogo {
                 p.atualizar(umaFase, hero);
             }
             
-            // Esta verificação é para personagens NÃO-HERÓIS (i > 0)
-            // que NÃO SÃO TRANSPONÍVEIS (como o Boss, Chasers, etc.)
+            // Esta verificação é para personagens NÃO-HERÓIS (i > 0)que NÃO são transponives
             if (i > 0 && !p.isbTransponivel()) {
-                
                 // Agora, verifica se 'p' colidiu com qualquer outro objeto sólido
                 for (int j = 0; j < umaFase.size(); j++) {
-                    
                     // Não precisa checar colisão consigo mesmo
                     if (i == j) {
                         continue; 
@@ -50,14 +40,10 @@ public class ControleDeJogo {
                     
                     Personagem outro = umaFase.get(j);
 
-                    // Se o 'outro' objeto também não for transponível (ex: Parede, ou outro Inimigo)
-                    // E as posições são iguais (colisão)...
+                    // Se o 'outro' objeto também não for transponível e as posições são iguais (colisão).
                     if (!outro.isbTransponivel() && p.getPosicao().igual(outro.getPosicao())) {
-                        
-                        // ...Manda o personagem 'p' de volta para a última posição.
-                        // Este é o mesmo mecanismo usado pelo Herói!
+                        // Manda o personagem 'p' de volta para a última posição.
                         p.voltaAUltimaPosicao();
-                        
                         // Já colidiu e voltou, não precisa continuar a checar outros objetos
                         break; 
                     }
@@ -85,7 +71,7 @@ public class ControleDeJogo {
                 
                 if (resultadoColisao.equals("REJEITADO")) {
                     hero.voltaAUltimaPosicao(); // Empurra o herói de volta
-                    return "GAME_RUNNING"; // Mas o jogo continua
+                    return "GAME_RUNNING"; // Jogo continua
                 }
                 
                 // 2. Trata os casos especiais (remoção de item)
@@ -94,42 +80,32 @@ public class ControleDeJogo {
                     return "ITEM_COLETADO";
                 
                 } else if (resultadoColisao.equals("MUNICAO_COLETADA")) {
-                    umaFase.remove(pIesimoPersonagem); // <<-- ESTA É A LINHA QUE FALTAVA
+                    umaFase.remove(pIesimoPersonagem);
                     return "MUNICAO_COLETADA";
                     
                 } else if (resultadoColisao.equals("CHAVE_COLETADA")) {
-                    umaFase.remove(pIesimoPersonagem); // A REMOÇÃO É AQUI!
-                    return "CHAVE_COLETADA"; // Retorna imediatamente (evita erro)
+                    umaFase.remove(pIesimoPersonagem);
+                    return "CHAVE_COLETADA";
                     
                 } else if (resultadoColisao.equals("BAU_ABERTO")) {
-                    umaFase.remove(pIesimoPersonagem); // Agora o Controle remove o baú
+                    umaFase.remove(pIesimoPersonagem); // Controle remove o baú
                     return "BAU_ABERTO"; // E avisa a Tela
 
                 } else if (resultadoColisao.equals("CADEADO_ABERTO")) {
-                    umaFase.remove(pIesimoPersonagem); // Agora o Controle remove o cadeado
-                    return "GAME_RUNNING"; // Abrir um cadeado não precisa de mais lógica
+                    umaFase.remove(pIesimoPersonagem); // Controle remove a portaFechada
+                    return "GAME_RUNNING";
                     
                 } else if (resultadoColisao.equals("PONTOS")) {
-                    // (Lógica para coletáveis genéricos, se tivéssemos)
                     umaFase.remove(pIesimoPersonagem);
                     return "PONTOS";
                 
                 } else if (!resultadoColisao.equals("GAME_RUNNING")) {
-                    // Retorna "HERO_DIED", "FASE_CONCLUIDA", "PORTAL_FASE_X", etc.
                     return resultadoColisao;
                 }
 
             }
         }
-        
-        // Atualiza a direção dos Chasers
-//        for (int i = 1; i < umaFase.size(); i++) {
-//            pIesimoPersonagem = umaFase.get(i);
-//            if (pIesimoPersonagem instanceof Chaser) {
-//                ((Chaser) pIesimoPersonagem).computeDirection(hero.getPosicao());
-//            }
-//        }
-        
+              
         return "GAME_RUNNING";
     }
 

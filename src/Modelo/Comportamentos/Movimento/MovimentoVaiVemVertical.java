@@ -2,17 +2,16 @@ package Modelo.Comportamentos.Movimento;
 
 import Modelo.Hero;
 import Modelo.Personagem;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia (Padrão Strategy) que implementa a lógica de movimento
- * "Vai e Vem Vertical" (cima-baixo).
- */
-public class MovimentoVaiVemVertical implements ComportamentoMovimento {
+// Vai e Vem Vertical (cima-baixo)
+public class MovimentoVaiVemVertical implements Serializable, ComportamentoMovimento {
+    private static final long serialVersionUID = 1L;
 
     private boolean bUp;
     private int contadorDeFrames;
-    private int velocidade;
+    private final int velocidade;
 
     public MovimentoVaiVemVertical(int velocidade) {
         this.velocidade = velocidade;
@@ -20,9 +19,6 @@ public class MovimentoVaiVemVertical implements ComportamentoMovimento {
         this.bUp = true; // Começa indo para cima
     }
 
-    /**
-     * O "QUANDO" (a lógica do timer que estava em InimigoPatrulha)
-     */
     @Override
     public void executar(Personagem p, ArrayList<Personagem> faseAtual, Hero hero) {
         if (contadorDeFrames == velocidade) {
@@ -33,9 +29,6 @@ public class MovimentoVaiVemVertical implements ComportamentoMovimento {
         contadorDeFrames++;
     }
 
-    /**
-     * O "O QUÊ" (a lógica que estava em BichinhoVaiVemVertical)
-     */
     private void proximoMovimento(Personagem p) {
         if (bUp) {
             p.moveUp();

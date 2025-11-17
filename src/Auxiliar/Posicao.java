@@ -1,11 +1,11 @@
-package auxiliar;
+package Auxiliar;
 
 import java.io.Serializable;
 
 public class Posicao implements Serializable {
     private int linha;
     private int coluna;
-    
+   
     private int linhaAnterior;
     private int colunaAnterior;
 

@@ -1,26 +1,22 @@
 package Modelo;
 
-import java.util.ArrayList; // <<-- MUDANÇA: Import necessário
-import Modelo.Hero;       // <<-- MUDANÇA: Import necessário
+import java.util.ArrayList;
+import java.io.Serializable;
 
-/**
- * Um obstáculo simples e intransponível.
- * Usado para construir as paredes do Lobby e as barreiras de gelo da Fase 1.
- */
-public class Parede extends Personagem {
+// obstáculo. Usado para criar paredes.
+public class Parede extends Personagem implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     public Parede(String sNomeImagePNG, int linha, int coluna) {
         super(sNomeImagePNG, linha, coluna);
-        this.bTransponivel = false; // NÃO PODE PASSAR POR CIMA
+        this.bTransponivel = false; // Não pode passar por cima
     }
 
-    // <<-- MUDANÇA: Renomeado de autoDesenho() para desenhar()
     @Override
     public void desenhar() {
         super.desenhar();
     }    
     
-    // <<-- MUDANÇA: Implementação obrigatória do método abstrato
     @Override
     public void atualizar(ArrayList<Personagem> faseAtual, Hero hero) {
         // Estático, não faz nada

@@ -24,7 +24,7 @@ public interface IFase {
     public String getBackgroundTile();
     
     // Retorna a skin do herói para esta fase
-    public String getHeroSkin();
+    //public String getHeroSkin();
     
     /**
      * @return A mensagem de imersão para o início da fase (ou null se não houver).

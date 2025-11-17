@@ -2,19 +2,15 @@ package Modelo.Comportamentos.Ataque;
 
 import Auxiliar.Consts;
 import Modelo.Personagem;
-/**
- * Esta é a lógica que estava em 'InimigoAtirador.java'.
- * Ela controla o timer e usa uma Fábrica para criar o projétil,
- * sem saber qual projétil está criando.
- */
-public class ComportamentoAtaqueAtirador implements ComportamentoAtaque {
+import java.io.Serializable;
+
+//Esta é a lógica que controla o timer e usa para criar o projétil,
+public class ComportamentoAtaqueAtirador implements Serializable, ComportamentoAtaque {
+    private static final long serialVersionUID = 1L;
     
     private int iContaIntervalos;
-    private IFabricaProjetil fabricaProjetil;
+    private final IFabricaProjetil fabricaProjetil;
 
-    /**
-     * @param fabricaProjetil Uma instância de fábrica (ex: new FabricaFogo())
-     */
     public ComportamentoAtaqueAtirador(IFabricaProjetil fabricaProjetil) {
         this.fabricaProjetil = fabricaProjetil;
         this.iContaIntervalos = 0;
@@ -30,7 +26,6 @@ public class ComportamentoAtaqueAtirador implements ComportamentoAtaque {
             Personagem projetil = this.fabricaProjetil.criarProjetil(p.getPosicao());
             
             // Adiciona o projétil ao jogo
-            // (Ainda usando o acesso global, mas agora está isolado aqui)
             Auxiliar.Desenho.acessoATelaDoJogo().addPersonagem(projetil);
         }
     }

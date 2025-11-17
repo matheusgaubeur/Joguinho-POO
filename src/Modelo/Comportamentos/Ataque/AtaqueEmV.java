@@ -2,29 +2,22 @@ package Modelo.Comportamentos.Ataque;
 
 import Modelo.Hero;
 import Modelo.Personagem;
-import Modelo.ProjetilDiagonalCimaDireita;  // <<-- IMPORTAMOS O PROJÉTIL NOVO
-import Modelo.ProjetilDiagonalBaixoDireita; // <<-- IMPORTAMOS O PROJÉTIL NOVO
+import Modelo.Comportamentos.Projeteis.ProjetilDiagonalCimaDireita;
+import Modelo.Comportamentos.Projeteis.ProjetilDiagonalBaixoDireita;
 import Auxiliar.Desenho;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia de Ataque (Padrão Strategy) que dispara dois projéteis
- * em um padrão "V" (diagonal para cima-direita e baixo-direita).
- */
-public class AtaqueEmV implements ComportamentoAtaque {
-
+// Ataque em "V" (diagonal para cima-direita e baixo-direita).
+public class AtaqueEmV implements Serializable, ComportamentoAtaque {
+    private static final long serialVersionUID = 1L;
     private int contador = 0;
     
     // Define o cooldown do ataque (ex: 30 ticks * 150ms = 4.5 segundos)
-    // Ajuste esse valor para deixar o inimigo mais ou menos rápido
     private static final int INTERVALO = 30; 
     
-    private String nomeImagemProjetil;
+    private final String nomeImagemProjetil;
 
-    /**
-     * Construtor.
-     * @param sNomeImagePNG A imagem que os projéteis usarão (ex: "fire.png")
-     */
     public AtaqueEmV(String sNomeImagePNG) {
         this.nomeImagemProjetil = sNomeImagePNG;
     }
@@ -39,11 +32,10 @@ public class AtaqueEmV implements ComportamentoAtaque {
             return;
         }
 
-        // 3. O timer chegou! Hora de atacar.
+        // 3. O timer chegou.
         contador = 0; // Reseta o timer
 
         // 4. Define o ponto de "nascimento" dos projéteis.
-        // Vamos fazer nascer um passo à frente do atirador (assumindo que ele atira para a direita)
         int linhaSpawn = p.getPosicao().getLinha();
         int colunaSpawn = p.getPosicao().getColuna() + 1; // +1 para não nascer em cima do atirador
 

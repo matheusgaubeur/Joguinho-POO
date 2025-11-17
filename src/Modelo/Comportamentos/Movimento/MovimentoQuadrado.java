@@ -2,20 +2,18 @@ package Modelo.Comportamentos.Movimento;
 
 import Modelo.Hero;
 import Modelo.Personagem;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Estratégia (Padrão Strategy) que implementa a lógica de movimento
- * em Quadrado (para o Peixe).
- */
-public class MovimentoQuadrado implements ComportamentoMovimento {
+public class MovimentoQuadrado implements Serializable, ComportamentoMovimento {
+    private static final long serialVersionUID = 1L;
 
-    private int tamanhoDoLado;
+    private final int tamanhoDoLado;
     private int passosRestantes;
     private int direcaoAtual; // 0: Cima, 1: Direita, 2: Baixo, 3: Esquerda
     
     private int contadorDeFrames;
-    private int velocidade;
+    private final int velocidade;
 
     public MovimentoQuadrado(int velocidade, int tamanhoDoLado) {
         this.velocidade = velocidade;
@@ -26,31 +24,24 @@ public class MovimentoQuadrado implements ComportamentoMovimento {
         this.direcaoAtual = 0; // Começa movendo para Cima
     }
 
-    /**
-     * O "QUANDO" (a lógica do timer)
-     */
     @Override
     public void executar(Personagem p, ArrayList<Personagem> faseAtual, Hero hero) {
         if (contadorDeFrames == velocidade) {
             contadorDeFrames = 0;
-            // Chama o "O QUÊ"
             this.proximoMovimento(p); 
         }
         contadorDeFrames++;
     }
 
-    /**
-     * O "O QUÊ" (a lógica que estava em Peixe)
-     */
     private void proximoMovimento(Personagem p) {
         boolean moveu = false;
         
         if (passosRestantes > 0) {
             switch (direcaoAtual) {
-                case 0: moveu = p.moveUp(); break;
-                case 1: moveu = p.moveRight(); break;
-                case 2: moveu = p.moveDown(); break;
-                case 3: moveu = p.moveLeft(); break;
+                case 0 -> moveu = p.moveUp();
+                case 1 -> moveu = p.moveRight();
+                case 2 -> moveu = p.moveDown();
+                case 3 -> moveu = p.moveLeft();
             }
             
             if(moveu) {
